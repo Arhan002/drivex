@@ -1,4 +1,4 @@
-
+import EnquiryForm from "@/components/EnquiryForm";
 export const instant = false;
 
 import { createClient } from "@/lib/supabase/server";
@@ -240,8 +240,24 @@ export default async function CarDetailPage({
               })}
             </div>
           )}
+                </section>
+
+        {/* Customer Enquiry Form */}
+        <section className="mt-14 rounded-2xl border border-gray-200 bg-white p-6 md:p-10">
+          <h2 className="text-gray-900 font-bold text-2xl">
+            Interested in this car?
+          </h2>
+          <p className="mb-6 text-gray-500">
+            Share your details and our sales team will contact you.
+          </p>
+
+          <EnquiryForm
+            source="new_car"
+            modelId={car.id}
+          />
         </section>
       </section>
     </main>
+    
   );
 }
