@@ -1,7 +1,15 @@
+
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 import EnquiryForm from "@/components/EnquiryForm";
+
 export const instant = false;
 
-import { createClient } from "@/lib/supabase/server";
+type Showroom = {
+  id: string;
+  name: string;
+  city: string;
+};
 
 type CarDetail = {
   id: string;
@@ -40,6 +48,7 @@ export default async function CarDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
+  // Fetch car details
   const { data, error } = await supabase
     .from("car_models")
     .select(`
@@ -83,9 +92,24 @@ export default async function CarDetailPage({
     );
   }
 
+  // Fetch active showrooms on the server
+  const { data: showroomData, error: showroomError } = await supabase
+    .from("showrooms")
+    .select("id, name, city")
+    .eq("is_active", true)
+    .order("name");
+
+  if (showroomError) {
+    console.error("Showroom query error:", showroomError.message);
+    throw new Error("Unable to load showrooms.");
+  }
+
+  const showrooms: Showroom[] = showroomData ?? [];
+
   const car = data as unknown as CarDetail;
   const variants = car.car_variants ?? [];
 
+  // Calculate Lucknow prices
   const prices = variants.flatMap((variant) =>
     (variant.car_prices ?? [])
       .filter((price) => price.city.toLowerCase() === "lucknow")
@@ -98,13 +122,16 @@ export default async function CarDetailPage({
   return (
     <main className="min-h-screen bg-[#f8f8f6]">
       <section className="mx-auto max-w-7xl px-6 py-12">
-        <a
+
+        {/* Back navigation */}
+        <Link
           href="/cars"
           className="text-sm font-semibold text-orange-600 hover:underline"
         >
           ← Back to all cars
-        </a>
+        </Link>
 
+        {/* Car information */}
         <div className="mt-8 grid gap-10 lg:grid-cols-2">
           <div className="overflow-hidden rounded-2xl bg-gray-200">
             {car.image_url ? (
@@ -145,6 +172,7 @@ export default async function CarDetailPage({
               </span>
             </div>
 
+            {/* Available variants */}
             <div className="mt-8">
               <h2 className="text-xl font-bold text-gray-900">
                 Available Variants
@@ -159,6 +187,7 @@ export default async function CarDetailPage({
                     <h3 className="font-semibold text-gray-900">
                       {variant.variant_name}
                     </h3>
+
                     <p className="mt-2 text-sm text-gray-500">
                       {variant.fuel_type} · {variant.transmission}
                     </p>
@@ -169,6 +198,7 @@ export default async function CarDetailPage({
           </div>
         </div>
 
+        {/* Pricing section */}
         <section className="mt-14">
           <h2 className="text-2xl font-bold text-gray-900">
             Pricing in Lucknow
@@ -203,7 +233,9 @@ export default async function CarDetailPage({
                     <div className="mt-5 space-y-3 text-sm">
                       <div className="flex justify-between gap-3">
                         <span className="text-gray-500">Ex-showroom</span>
-                        <span>{money(Number(price.ex_showroom_price))}</span>
+                        <span>
+                          {money(Number(price.ex_showroom_price))}
+                        </span>
                       </div>
 
                       <div className="flex justify-between gap-3">
@@ -218,7 +250,9 @@ export default async function CarDetailPage({
 
                       <div className="flex justify-between gap-3">
                         <span className="text-gray-500">Accessories</span>
-                        <span>{money(Number(price.accessories))}</span>
+                        <span>
+                          {money(Number(price.accessories))}
+                        </span>
                       </div>
                     </div>
 
@@ -226,6 +260,7 @@ export default async function CarDetailPage({
                       <p className="text-sm text-gray-500">
                         Estimated on-road price
                       </p>
+
                       <p className="mt-1 text-3xl font-bold text-orange-600">
                         {money(total)}
                       </p>
@@ -240,24 +275,18 @@ export default async function CarDetailPage({
               })}
             </div>
           )}
-                </section>
+        </section>
 
-        {/* Customer Enquiry Form */}
-        <section className="mt-14 rounded-2xl border border-gray-200 bg-white p-6 md:p-10">
-          <h2 className="text-gray-900 font-bold text-2xl">
-            Interested in this car?
-          </h2>
-          <p className="mb-6 text-gray-500">
-            Share your details and our sales team will contact you.
-          </p>
-
+        {/* Customer enquiry form */}
+        <section className="mt-14">
           <EnquiryForm
             source="new_car"
             modelId={car.id}
+            showrooms={showrooms}
           />
         </section>
+
       </section>
     </main>
-    
   );
 }

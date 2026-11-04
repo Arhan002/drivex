@@ -54,10 +54,14 @@ export default async function UsedCarsPage() {
             DriveX Pre-Owned
           </p>
 
-          <h1 className="max-w-3xl text-4xl font-bold leading-tight md:text-6xl">
-            Find your next car.
-            <span className="text-orange-400"> Drive with confidence.</span>
+          <h1 className="text-4xl font-bold leading-tight md:text-6xl">
+            Used Cars
+            <span className="text-orange-400">.</span>
           </h1>
+
+          <h2 className="mt-4 max-w-3xl text-2xl font-semibold md:text-3xl">
+            Find your next car. Drive with confidence.
+          </h2>
 
           <p className="mt-5 max-w-2xl text-base leading-7 text-gray-300">
             Explore carefully selected pre-owned vehicles with transparent
@@ -78,7 +82,9 @@ export default async function UsedCarsPage() {
             <p className="text-sm font-semibold uppercase tracking-widest text-orange-600">
               Our inventory
             </p>
-            <h2 className="mt-2 text-3xl font-bold">Available used cars</h2>
+            <h2 className="mt-2 text-3xl font-bold">
+              Available used cars
+            </h2>
           </div>
 
           <p className="text-sm text-gray-500">
@@ -92,7 +98,9 @@ export default async function UsedCarsPage() {
           </div>
         ) : usedCars.length === 0 ? (
           <div className="rounded-xl border border-gray-200 bg-white p-10 text-center">
-            <h3 className="text-xl font-semibold">No cars available right now</h3>
+            <h3 className="text-xl font-semibold">
+              No cars available right now
+            </h3>
             <p className="mt-2 text-gray-500">
               Please check back soon for new arrivals.
             </p>

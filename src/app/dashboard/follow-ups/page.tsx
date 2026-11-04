@@ -24,14 +24,6 @@ type Lead = {
   status: string;
 };
 
-const navigation = [
-  { label: "Overview", href: "/dashboard", icon: "▦" },
-  { label: "Lead Inbox", href: "/dashboard/leads", icon: "☷" },
-  { label: "Follow-ups", href: "/dashboard/follow-ups", icon: "⏰" },
-  { label: "New Cars", href: "/cars", icon: "🚘" },
-  { label: "Used Cars", href: "/used-cars", icon: "🚙" },
-  { label: "Test Drives", href: "/book-test-drive", icon: "🗓" },
-];
 
 const styles: Record<
   Status,
@@ -411,60 +403,8 @@ export default async function FollowUpsPage({
 
   return (
     <div className="min-h-screen bg-[#f5f6f8] text-gray-900">
-      {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-[#17191f] text-white lg:flex">
-        <div className="flex h-20 items-center border-b border-white/10 px-7">
-          <Link
-            href="/dashboard"
-            className="text-3xl font-extrabold tracking-tight"
-          >
-            Drive<span className="text-orange-500">X</span>
-          </Link>
-        </div>
-
-        <div className="px-5 py-7">
-          <p className="mb-4 px-3 text-xs font-semibold uppercase tracking-widest text-gray-500">
-            Workspace
-          </p>
-
-          <nav className="space-y-2">
-            {navigation.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                aria-current={
-                  item.href === "/dashboard/follow-ups" ? "page" : undefined
-                }
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
-                  item.href === "/dashboard/follow-ups"
-                    ? "bg-orange-600 text-white shadow-lg shadow-orange-950/30"
-                    : "text-gray-400 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                <span className="w-6 text-center text-lg">{item.icon}</span>
-                {item.label}
-                {item.href === "/dashboard/follow-ups" && (
-                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-white" />
-                )}
-              </Link>
-            ))}
-          </nav>
-        </div>
-
-        <div className="mt-auto border-t border-white/10 p-5">
-          <div className="rounded-xl bg-white/5 p-4">
-            <p className="text-xs text-gray-400">DriveX Dealership</p>
-            <p className="mt-1 text-sm font-semibold">Lucknow, India</p>
-            <p className="mt-3 flex items-center gap-2 text-xs text-green-400">
-              <span className="h-2 w-2 rounded-full bg-green-400" />
-              CRM Workspace
-            </p>
-          </div>
-        </div>
-      </aside>
-
       {/* Main workspace */}
-      <div className="min-h-screen lg:pl-64">
+      <div className="min-h-screen">
         {/* Header */}
         <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 backdrop-blur-xl">
           <div className="flex min-h-[72px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-9">
@@ -503,29 +443,6 @@ export default async function FollowUpsPage({
             </div>
           </div>
 
-          {/* Mobile navigation */}
-          <nav
-            aria-label="Main navigation"
-            className="flex gap-2 overflow-x-auto border-t border-gray-100 bg-white px-4 py-3 lg:hidden"
-          >
-            {navigation.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                aria-current={
-                  item.href === "/dashboard/follow-ups" ? "page" : undefined
-                }
-                className={`flex min-h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                  item.href === "/dashboard/follow-ups"
-                    ? "bg-orange-600 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                <span>{item.icon}</span>
-                {item.label}
-              </Link>
-            ))}
-          </nav>
         </header>
 
         <main className="mx-auto max-w-[1500px] px-4 py-7 sm:px-6 sm:py-9 lg:px-9">

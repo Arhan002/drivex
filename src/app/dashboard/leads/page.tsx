@@ -1,4 +1,4 @@
-import DashboardSidebar from "@/components/DashboardSidebar";
+
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
@@ -340,10 +340,8 @@ export default async function LeadsPage({
   ).length;
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] text-slate-900">
-      <DashboardSidebar />
-
-      <main className="min-h-screen lg:pl-64">
+  <div className="min-h-screen bg-[#f5f6f8] text-slate-900">
+    <main className="min-h-screen">
         {/* Top navigation */}
         <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur-xl">
           <div className="mx-auto flex min-h-[76px] max-w-[1600px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-10">

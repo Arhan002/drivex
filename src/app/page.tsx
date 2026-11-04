@@ -40,7 +40,7 @@ const formatPrice = (amount: number) =>
 
 const navLinks = [
   { href: "#new-cars", label: "New cars" },
-  { href: "#used-cars", label: "Used cars" },
+  { href: "used-cars", label: "Used cars" },
   { href: "#why-drivex", label: "Why DriveX" },
   { href: "#contact", label: "Contact" },
 ];
@@ -238,7 +238,7 @@ export default async function Home({
                 Browse new cars <ArrowRight size={18} />
               </a>
               <a
-                href="#used-cars"
+                href="used-cars"
                 className={`inline-flex items-center justify-center rounded-full border border-white/40 px-7 py-3.5 font-semibold text-white transition-colors hover:bg-white hover:text-neutral-950 ${focusRing}`}
               >
                 See used cars
@@ -667,7 +667,7 @@ export default async function Home({
             <p className="text-sm font-semibold">Browse</p>
             <ul className="mt-3 space-y-2 text-sm text-neutral-600">
               <li><a href="#new-cars" className="hover:text-neutral-950">New cars</a></li>
-              <li><a href="#used-cars" className="hover:text-neutral-950">Used cars</a></li>
+              <li><a href="used-cars" className="hover:text-neutral-950">Used cars</a></li>
               <li><Link href="/book-test-drive" className="hover:text-neutral-950">Book a test drive</Link></li>
             </ul>
           </div>

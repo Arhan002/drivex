@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type Showroom = {
   id: string;
@@ -12,13 +12,14 @@ type Showroom = {
 type EnquiryFormProps = {
   source: "new_car" | "used_car";
   modelId?: string;
+  showrooms: Showroom[];
 };
 
 export default function EnquiryForm({
   source,
   modelId,
+  showrooms,
 }: EnquiryFormProps) {
-  const [showrooms, setShowrooms] = useState<Showroom[]>([]);
   const [buyerName, setBuyerName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -27,30 +28,12 @@ export default function EnquiryForm({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [fuelPreference, setFuelPreference] = useState("");
-const [transmissionPreference, setTransmissionPreference] = useState("");
-const [budget, setBudget] = useState("");
-const [purchaseTimeline, setPurchaseTimeline] = useState("");
+  const [transmissionPreference, setTransmissionPreference] = useState("");
+  const [budget, setBudget] = useState("");
+  const [purchaseTimeline, setPurchaseTimeline] = useState("");
 
-  useEffect(() => {
-    async function loadShowrooms() {
-      try {
-        const response = await fetch("/api/booking-options");
-
-        if (!response.ok) {
-          throw new Error("Unable to load showrooms.");
-        }
-
-        const data = await response.json();
-        console.log("API response:", data);
-console.log("Showrooms:", data.showrooms);
-        setShowrooms(data.showrooms ?? []);
-      } catch {
-        setMessage("Unable to load showrooms. Please refresh the page.");
-      }
-    }
-
-    loadShowrooms();
-  }, []);
+  const inputStyle =
+    "w-full rounded-lg border border-gray-300 bg-white p-3 text-gray-900 placeholder:text-gray-500 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100";
 
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>
@@ -73,9 +56,9 @@ console.log("Showrooms:", data.showrooms);
           modelId,
           source,
           fuelPreference,
-transmissionPreference,
-budget,
-purchaseTimeline,
+          transmissionPreference,
+          budget,
+          purchaseTimeline,
           consentGiven: consent,
         }),
       });
@@ -95,6 +78,10 @@ purchaseTimeline,
       setPhone("");
       setShowroomId("");
       setConsent(false);
+      setFuelPreference("");
+      setTransmissionPreference("");
+      setBudget("");
+      setPurchaseTimeline("");
     } catch (error) {
       setMessage(
         error instanceof Error
@@ -105,9 +92,6 @@ purchaseTimeline,
       setLoading(false);
     }
   }
-
-  const inputStyle =
-    "w-full rounded-lg border border-gray-300 bg-white p-3 text-gray-900 placeholder:text-gray-500 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100";
 
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-6 text-gray-900 shadow-sm md:p-8">
@@ -152,26 +136,25 @@ purchaseTimeline,
           required
           value={showroomId}
           onChange={(e) => setShowroomId(e.target.value)}
-          className={`${inputStyle} ${
-            showroomId ? "text-gray-900" : "text-gray-500"
-          }`}
+          className={inputStyle}
         >
           <option value="">Choose preferred showroom</option>
 
           {showrooms.map((showroom) => (
-            <option
-              key={showroom.id}
-              value={showroom.id}
-              className="text-gray-900"
-            >
+            <option key={showroom.id} value={showroom.id}>
               {showroom.name} – {showroom.city}
             </option>
           ))}
         </select>
 
-        {/* Buyer Preferences */}
+        {showrooms.length === 0 && (
+          <p className="text-sm text-red-600">
+            No showrooms are currently available. Please contact our team.
+          </p>
+        )}
+
         <div className="border-t border-gray-200 pt-5">
-          <h3 className="mb-1 text-lg font-semibold text-gray-900">
+          <h3 className="mb-1 text-lg font-semibold">
             Your Preferences
           </h3>
           <p className="mb-4 text-sm text-gray-500">
@@ -180,7 +163,7 @@ purchaseTimeline,
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
+              <label className="mb-2 block text-sm font-medium">
                 Fuel Preference
               </label>
               <select
@@ -198,7 +181,7 @@ purchaseTimeline,
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
+              <label className="mb-2 block text-sm font-medium">
                 Transmission Preference
               </label>
               <select
@@ -214,7 +197,7 @@ purchaseTimeline,
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
+              <label className="mb-2 block text-sm font-medium">
                 Budget
               </label>
               <select
@@ -232,7 +215,7 @@ purchaseTimeline,
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
+              <label className="mb-2 block text-sm font-medium">
                 Purchase Timeline
               </label>
               <select
@@ -259,7 +242,6 @@ purchaseTimeline,
             onChange={(e) => setConsent(e.target.checked)}
             className="mt-1 accent-orange-600"
           />
-
           <span>
             I agree to be contacted by DriveX regarding my enquiry.
           </span>
@@ -267,17 +249,14 @@ purchaseTimeline,
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || showrooms.length === 0}
           className="w-full rounded-lg bg-orange-600 px-5 py-3 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? "Submitting..." : "Submit Enquiry"}
         </button>
 
         {message && (
-          <p
-            role="status"
-            className="break-all text-sm font-medium text-gray-800"
-          >
+          <p role="status" className="break-all text-sm font-medium">
             {message}
           </p>
         )}

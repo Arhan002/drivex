@@ -14,15 +14,6 @@ type Lead = {
   created_at: string;
 };
 
-const navigation = [
-  { label: "Overview", href: "/dashboard", icon: "▦" },
-  { label: "Lead Inbox", href: "/dashboard/leads", icon: "☷" },
-  { label: "Follow-ups", href: "/dashboard/follow-ups", icon: "◷" },
-  { label: "New Cars", href: "/cars", icon: "🚘" },
-  { label: "Used Cars", href: "/used-cars", icon: "🚙" },
-  { label: "Test Drives", href: "/book-test-drive", icon: "▣" },
-];
-
 const statusStyles: Record<string, string> = {
   new: "bg-orange-50 text-orange-700 ring-orange-200",
   contacted: "bg-blue-50 text-blue-700 ring-blue-200",
@@ -64,9 +55,16 @@ export default async function DashboardPage() {
     .eq("id", user.id)
     .single();
 
-  if (profileError || !profile || !["consultant", "admin"].includes(profile.role)) {
+  if (
+    profileError ||
+    !profile ||
+    !["consultant", "admin"].includes(profile.role)
+  ) {
     redirect("/login");
   }
+
+  const roleLabel =
+    profile.role === "admin" ? "Administrator" : "Sales Consultant";
 
   // 3. Fetch leads according to the user's role
   let leads: Lead[] = [];
@@ -189,85 +187,16 @@ export default async function DashboardPage() {
     .join("")
     .toUpperCase();
 
-  const roleLabel =
-    profile.role === "admin" ? "Administrator" : "Sales Consultant";
-
   return (
     <div className="min-h-screen bg-[#f6f7f9] text-gray-900">
-
-      {/* Desktop Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-[#17191f] text-white lg:flex">
-        <div className="flex h-20 items-center border-b border-white/10 px-7">
-          <Link href="/dashboard" className="text-3xl font-extrabold tracking-tight">
-            Drive<span className="text-orange-500">X</span>
-          </Link>
-        </div>
-
-        <div className="px-5 py-7">
-          <p className="mb-4 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-gray-500">
-            Workspace
-          </p>
-
-          <nav className="space-y-1.5">
-            {navigation.map((item, index) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                aria-current={index === 0 ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
-                  index === 0
-                    ? "bg-orange-600 text-white shadow-lg shadow-orange-950/30"
-                    : "text-gray-400 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                <span className="w-6 text-center text-lg">{item.icon}</span>
-                {item.label}
-                {index === 0 && (
-                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-white" />
-                )}
-              </Link>
-            ))}
-          </nav>
-        </div>
-
-        <div className="mt-auto border-t border-white/10 p-5">
-          <div className="rounded-xl bg-white/5 p-4">
-            <p className="text-xs text-gray-400">DriveX Dealership</p>
-            <p className="mt-1 text-sm font-semibold">Lucknow, India</p>
-            <p className="mt-3 flex items-center gap-2 text-xs text-green-400">
-              <span className="h-2 w-2 rounded-full bg-green-400" />
-              CRM workspace
-            </p>
-          </div>
-        </div>
-      </aside>
-
       {/* Main workspace */}
-      <div className="min-h-screen lg:pl-64">
-
+      <div className="min-h-screen">
         {/* Top navigation */}
         <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 backdrop-blur-xl">
           <div className="flex h-[72px] items-center justify-between px-4 sm:px-6 lg:px-9">
-            <div className="flex items-center gap-3">
-              <Link
-                href="/dashboard"
-                className="text-2xl font-extrabold tracking-tight lg:hidden"
-              >
-                Drive<span className="text-orange-600">X</span>
-              </Link>
-
-              <div className="hidden lg:block">
-                <p className="text-xs text-gray-400">Workspace / Overview</p>
-                <h2 className="mt-0.5 text-base font-bold">
-                  Sales Dashboard
-                </h2>
-              </div>
-
-              <div className="lg:hidden">
-                <p className="text-xs font-medium text-gray-500">
-                  Sales Workspace
-                </p>
-              </div>
+            <div>
+              <p className="text-xs text-gray-400">Workspace / Overview</p>
+              <h2 className="mt-0.5 text-base font-bold">Sales Dashboard</h2>
             </div>
 
             <div className="flex items-center gap-3 sm:gap-4">
@@ -293,28 +222,9 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* Mobile and tablet navigation */}
-          <nav className="flex gap-2 overflow-x-auto border-t border-gray-100 px-4 py-2.5 lg:hidden">
-            {navigation.map((item, index) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                aria-current={index === 0 ? "page" : undefined}
-                className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                  index === 0
-                    ? "bg-orange-600 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                <span>{item.icon}</span>
-                {item.label}
-              </Link>
-            ))}
-          </nav>
         </header>
 
         <main className="mx-auto max-w-[1500px] px-4 py-7 sm:px-6 sm:py-9 lg:px-9">
-
           {/* Welcome section */}
           <section className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
             <div>
@@ -327,7 +237,7 @@ export default async function DashboardPage() {
               </h1>
 
               <p className="mt-2 max-w-xl text-sm leading-6 text-gray-500">
-                Here's what's happening with your customer enquiries.
+                Here&apos;s what&apos;s happening with your customer enquiries.
                 Keep track of your leads and stay on top of every opportunity.
               </p>
             </div>
@@ -373,7 +283,6 @@ export default async function DashboardPage() {
 
           {/* Pipeline and quick actions */}
           <section className="mt-7 grid gap-6 xl:grid-cols-3">
-
             {/* Lead pipeline */}
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6 xl:col-span-2">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -395,14 +304,26 @@ export default async function DashboardPage() {
               <div className="mt-7 space-y-5">
                 {[
                   { label: "New", status: "new", color: "bg-orange-500" },
-                  { label: "Contacted", status: "contacted", color: "bg-blue-500" },
-                  { label: "Qualified", status: "qualified", color: "bg-purple-500" },
+                  {
+                    label: "Contacted",
+                    status: "contacted",
+                    color: "bg-blue-500",
+                  },
+                  {
+                    label: "Qualified",
+                    status: "qualified",
+                    color: "bg-purple-500",
+                  },
                   {
                     label: "Test Drive Scheduled",
                     status: "test_drive_scheduled",
                     color: "bg-indigo-500",
                   },
-                  { label: "Converted", status: "converted", color: "bg-green-500" },
+                  {
+                    label: "Converted",
+                    status: "converted",
+                    color: "bg-green-500",
+                  },
                   { label: "Lost", status: "lost", color: "bg-red-400" },
                 ].map((item) => {
                   const count = countByStatus(item.status);
@@ -547,7 +468,8 @@ export default async function DashboardPage() {
                           </p>
                           <p className="mt-1 text-xs text-gray-500">
                             {lead.interested_model_id
-                              ? modelMap.get(lead.interested_model_id) ?? "Model enquiry"
+                              ? modelMap.get(lead.interested_model_id) ??
+                                "Model enquiry"
                               : "General enquiry"}
                           </p>
                         </div>
@@ -568,7 +490,9 @@ export default async function DashboardPage() {
                             ? showroomMap.get(lead.showroom_id) ?? "Showroom"
                             : "Not assigned"}
                         </span>
-                        <span className="shrink-0">{formatDate(lead.created_at)}</span>
+                        <span className="shrink-0">
+                          {formatDate(lead.created_at)}
+                        </span>
                       </div>
                     </Link>
                   ))}
@@ -580,7 +504,9 @@ export default async function DashboardPage() {
                     <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-500">
                       <tr>
                         <th className="px-6 py-4 font-semibold">Customer</th>
-                        <th className="px-6 py-4 font-semibold">Interested In</th>
+                        <th className="px-6 py-4 font-semibold">
+                          Interested In
+                        </th>
                         <th className="px-6 py-4 font-semibold">Showroom</th>
                         <th className="px-6 py-4 font-semibold">Date</th>
                         <th className="px-6 py-4 font-semibold">Status</th>
@@ -605,7 +531,8 @@ export default async function DashboardPage() {
 
                           <td className="px-6 py-4 text-gray-600">
                             {lead.interested_model_id
-                              ? modelMap.get(lead.interested_model_id) ?? "Model enquiry"
+                              ? modelMap.get(lead.interested_model_id) ??
+                                "Model enquiry"
                               : "General enquiry"}
                           </td>
 
