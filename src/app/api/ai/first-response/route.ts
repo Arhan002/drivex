@@ -197,7 +197,7 @@ Requirements:
 
     try {
       response = await gemini.models.generateContent({
-        model: "gemini-3.8-flash",
+      model: "gemini-3.6-flash",
         contents: prompt,
         config: {
           temperature: 0.4,

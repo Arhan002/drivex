@@ -254,7 +254,7 @@ ${JSON.stringify(customerData)}
 
     try {
       response = await gemini.models.generateContent({
-        model: "gemini-3.8-flash",
+        model: "gemini-3.6-flash",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -263,8 +263,12 @@ ${JSON.stringify(customerData)}
           httpOptions: {
             timeout: 30000,
             retryOptions: {
-              attempts: 1,
-            },
+  attempts: 3,
+  initialDelay: 2,
+  maxDelay: 8,
+  expBase: 2,
+  jitter: 1,
+},
           },
         },
       });

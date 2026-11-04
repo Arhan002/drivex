@@ -166,7 +166,7 @@ export default async function Home({
           </div>
 
           <Link
-            href="/test-drive"
+            href="/book-test-drive"
             className={`hidden rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-neutral-950 transition-colors hover:bg-orange-400 md:inline-block ${focusRing}`}
           >
             Book a test drive
@@ -193,7 +193,7 @@ export default async function Home({
                 </a>
               ))}
               <Link
-                href="/test-drive"
+                href="/book-test-drive"
                 className="mt-2 block rounded-xl bg-orange-500 px-4 py-3 text-center text-sm font-semibold text-neutral-950"
               >
                 Book a test drive
@@ -630,7 +630,7 @@ export default async function Home({
       </section>
 
       {/* TEST DRIVE CTA */}
-      <section id="test-drive" className="scroll-mt-20 px-4 pb-16 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24">
+      <section id="book-test-drive" className="scroll-mt-20 px-4 pb-16 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24">
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 rounded-3xl bg-orange-500 px-6 py-12 text-neutral-950 sm:px-12 sm:py-16 md:flex-row md:items-center">
           <div>
             <h2 className={`${heading} text-3xl font-extrabold sm:text-5xl`}>
@@ -642,7 +642,7 @@ export default async function Home({
           </div>
 
           <Link
-            href="/test-drive"
+            href="/book-test-drive"
             className={`inline-flex w-full items-center justify-center gap-2 rounded-full bg-neutral-950 px-8 py-4 font-semibold text-white transition-colors hover:bg-neutral-800 md:w-auto ${focusRing}`}
           >
             Book a test drive <ArrowRight size={18} />
@@ -668,7 +668,7 @@ export default async function Home({
             <ul className="mt-3 space-y-2 text-sm text-neutral-600">
               <li><a href="#new-cars" className="hover:text-neutral-950">New cars</a></li>
               <li><a href="#used-cars" className="hover:text-neutral-950">Used cars</a></li>
-              <li><Link href="/test-drive" className="hover:text-neutral-950">Test drive</Link></li>
+              <li><Link href="/book-test-drive" className="hover:text-neutral-950">Book a test drive</Link></li>
             </ul>
           </div>
 
