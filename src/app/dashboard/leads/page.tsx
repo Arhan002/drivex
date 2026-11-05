@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 
 import LeadFollowup from "@/components/LeadFollowup";
 import LeadStatusControl from "@/components/LeadStatusControl";
+import BookingStatusControl from "@/components/BookingStatusControl";
 import BuyerSummary from "@/components/BuyerSummary";
 import LeadResponseDraft from "@/components/LeadResponseDraft";
 
@@ -32,6 +33,17 @@ type Assignment = {
   assigned_at: string;
   response_due_at: string;
   first_contacted_at: string | null;
+};
+
+type BookingInfo = {
+  id : string;
+  lead_id: string;
+  demo_vehicle_id: string;
+  scheduled_at: string;
+  status: string;
+  model_name: string | null;
+  variant_name: string | null;
+
 };
 
 type SearchParams = {
@@ -261,6 +273,97 @@ export default async function LeadsPage({
   const modelMap = new Map(
     (modelData ?? []).map((item) => [item.id, item.name])
   );
+
+  // Fetch test-drive bookings for the leads visible to this user.
+  const leadIdsForBookings = leads.map((lead) => lead.id);
+
+  const { data: bookingRows, error: bookingError } =
+  leadIdsForBookings.length
+    ? await supabase
+        .from("test_drive_bookings")
+        .select("id,lead_id, demo_vehicle_id, scheduled_at, status")
+        .in("lead_id", leadIdsForBookings)
+        .order("scheduled_at", { ascending: false })
+    : { data: [], error: null };
+
+console.log("Visible lead IDs:", leadIdsForBookings);
+console.log("Booking rows:", bookingRows);
+console.log("Booking query error:", bookingError);
+
+  const demoVehicleIds = [
+    ...new Set((bookingRows ?? []).map((booking) => booking.demo_vehicle_id)),
+  ];
+
+  const { data: demoVehicleRows } = demoVehicleIds.length
+    ? await supabase
+        .from("demo_vehicles")
+        .select("id, variant_id")
+        .in("id", demoVehicleIds)
+    : { data: [] };
+
+  const variantIds = [
+    ...new Set((demoVehicleRows ?? []).map((vehicle) => vehicle.variant_id)),
+  ];
+
+  const { data: variantRows } = variantIds.length
+    ? await supabase
+        .from("car_variants")
+        .select("id, variant_name, model_id")
+        .in("id", variantIds)
+    : { data: [] };
+
+  const bookingModelIds = [
+    ...new Set(
+      (variantRows ?? [])
+        .map((variant) => variant.model_id)
+        .filter((id): id is string => Boolean(id))
+    ),
+  ];
+
+  const { data: bookingModelRows } = bookingModelIds.length
+    ? await supabase
+        .from("car_models")
+        .select("id, name")
+        .in("id", bookingModelIds)
+    : { data: [] };
+
+  const bookingModelMap = new Map(
+    (bookingModelRows ?? []).map((model) => [model.id, model.name])
+  );
+  const demoVehicleMap = new Map(
+    (demoVehicleRows ?? []).map((vehicle) => [vehicle.id, vehicle.variant_id])
+  );
+  const variantMap = new Map(
+    (variantRows ?? []).map((variant) => [
+      variant.id,
+      {
+        name: variant.variant_name,
+        modelId: variant.model_id,
+      },
+    ])
+  );
+
+  const bookingMap = new Map<string, BookingInfo>();
+
+  for (const booking of bookingRows ?? []) {
+    // Rows are ordered newest first, so keep the latest booking per lead.
+    if (bookingMap.has(booking.lead_id)) continue;
+
+    const variantId = demoVehicleMap.get(booking.demo_vehicle_id);
+    const variant = variantId ? variantMap.get(variantId) : undefined;
+
+    bookingMap.set(booking.lead_id, {
+      id: booking.id,
+      lead_id: booking.lead_id,
+      demo_vehicle_id: booking.demo_vehicle_id,
+      scheduled_at: booking.scheduled_at,
+      model_name: variant?.modelId
+        ? bookingModelMap.get(variant.modelId) ?? null
+        : null,
+      variant_name: variant?.name ?? null,
+      status: booking.status,
+    });
+  }
 
   // Summary counts use all authorized leads.
   const countByStatus = (value: string) =>
@@ -787,6 +890,52 @@ export default async function LeadsPage({
                             {lead.source.replaceAll("_", " ")}
                           </span>
                         </div>
+
+                        {/* Test-drive booking details */}
+                        {bookingMap.has(lead.id) && (
+                          <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                              <h5 className="text-xs font-bold uppercase tracking-[0.15em] text-indigo-700">
+                                Test-drive details
+                              </h5>
+                              <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
+                                {bookingMap.get(lead.id)?.status === "confirmed"
+  ? "Booking confirmed"
+  : bookingMap.get(lead.id)?.status === "pending"
+    ? "Pending confirmation"
+    : bookingMap.get(lead.id)?.status === "cancelled"
+      ? "Cancelled"
+      : bookingMap.get(lead.id)?.status ?? "Unknown"}
+                              </span>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <div>
+                                <p className="text-xs text-slate-500">Vehicle</p>
+                                <p className="mt-1 text-sm font-semibold text-slate-900">
+                                  {bookingMap.get(lead.id)?.model_name ?? modelName}
+                                  {bookingMap.get(lead.id)?.variant_name
+                                    ? ` · ${bookingMap.get(lead.id)?.variant_name}`
+                                    : ""}
+                                </p>
+                              </div>
+                              <div className="grid gap-3 sm:grid-cols-2">
+  {/* Keep your existing Vehicle and Scheduled date & time fields */}
+</div>
+
+<BookingStatusControl
+  bookingId={bookingMap.get(lead.id)!.id}
+  currentStatus={bookingMap.get(lead.id)!.status}
+/>
+                              <div>
+                                <p className="text-xs text-slate-500">Scheduled date & time</p>
+                                <p className="mt-1 text-sm font-semibold text-slate-900">
+                                  {formatDate(bookingMap.get(lead.id)!.scheduled_at)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Buyer preferences */}
                         <div className="mt-7">

@@ -2,11 +2,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LogoutButton() {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -14,17 +12,21 @@ export default function LogoutButton() {
     setLoading(true);
     setError("");
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signOut();
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut();
 
-    if (error) {
+      if (error) {
+        throw error;
+      }
+
+      // Fully reload the login page and clear stale UI state.
+      window.location.replace("/login");
+    } catch (err) {
+      console.error("Logout error:", err);
       setError("Unable to sign out. Please try again.");
       setLoading(false);
-      return;
     }
-
-    router.replace("/login");
-    router.refresh();
   }
 
   return (
@@ -40,7 +42,9 @@ export default function LogoutButton() {
       </button>
 
       {error && (
-        <p className="mt-2 px-3 text-xs text-red-400">{error}</p>
+        <p className="mt-2 px-3 text-xs text-red-400">
+          {error}
+        </p>
       )}
     </div>
   );
