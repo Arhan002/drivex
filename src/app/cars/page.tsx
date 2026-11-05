@@ -43,14 +43,13 @@ const formatPrice = (price: number) =>
     maximumFractionDigits: 0,
   }).format(price);
 
-function TopNav() {
+function TopNav({ backHref, from }: { backHref: string; from: string }) {
   return (
     <header className="sticky top-0 z-30 border-b border-neutral-200/70 bg-white/90 backdrop-blur-xl">
       <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-8">
-
         <div className="flex items-center gap-5">
           <Link
-            href="/"
+            href={backHref}
             className="flex items-center gap-2 rounded-lg text-sm font-semibold text-neutral-500 transition hover:text-orange-600"
           >
             <ArrowLeft size={17} />
@@ -66,24 +65,19 @@ function TopNav() {
         </div>
 
         <nav className="hidden items-center gap-8 text-sm font-medium text-neutral-600 sm:flex">
-          <Link
-            href="/cars"
-            className="font-bold text-orange-600"
-          >
+          <Link href={`/cars?from=${from}`} className="font-bold text-orange-600">
             New Cars
           </Link>
-
-          <Link href="/used-cars" className="transition hover:text-orange-600">
+          <Link href={`/used-cars?from=${from}`} className="transition hover:text-orange-600">
             Used Cars
           </Link>
-
-          <Link href="/book-test-drive" className="transition hover:text-orange-600">
+          <Link href={`/book-test-drive?from=${from}`} className="transition hover:text-orange-600">
             Test Drives
           </Link>
         </nav>
 
         <Link
-          href="/book-test-drive"
+          href={`/book-test-drive?from=${from}`}
           className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-5 py-3 text-xs font-bold text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-orange-400 hover:shadow-lg sm:text-sm"
         >
           Book a test drive
@@ -97,9 +91,11 @@ function TopNav() {
 export default async function CarsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ type?: string; from?: string }>;
 }) {
-  const { type } = await searchParams;
+  const { type, from: source } = await searchParams;
+  const from = source === "dashboard" ? "dashboard" : "home";
+  const backHref = from === "dashboard" ? "/dashboard" : "/";
   const supabase = await createClient();
 
   const { data: modelData, error } = await supabase
@@ -132,7 +128,7 @@ export default async function CarsPage({
 
     return (
       <main className="min-h-screen bg-[#f7f7f5]">
-        <TopNav />
+       <TopNav backHref={backHref} from={from} />
 
         <div className="mx-auto max-w-3xl px-6 py-28 text-center">
           <CarFront size={42} className="mx-auto text-orange-500" />
@@ -172,7 +168,7 @@ export default async function CarsPage({
 
   return (
     <main className="min-h-screen bg-[#f7f7f5]">
-      <TopNav />
+      <TopNav backHref={backHref} from={from} />
 
       {/* PREMIUM HERO */}
       <section className="relative isolate overflow-hidden bg-[#090909] px-5 py-20 text-white sm:px-8 lg:py-28">
@@ -268,7 +264,7 @@ export default async function CarsPage({
           <div className="mb-10 flex gap-2 overflow-x-auto pb-2">
 
             <Link
-              href="/cars"
+              href={`/cars?from=${from}`}
               className={`shrink-0 rounded-full border px-6 py-3 text-sm font-semibold transition-all duration-300 ${
                 !type
                   ? "border-neutral-950 bg-neutral-950 text-white shadow-lg"
@@ -281,7 +277,7 @@ export default async function CarsPage({
             {bodyTypes.map((bt) => (
               <Link
                 key={bt}
-                href={`/cars?type=${encodeURIComponent(bt)}`}
+                href={`/cars?type=${encodeURIComponent(bt)}&from=${from}`}
                 className={`shrink-0 rounded-full border px-6 py-3 text-sm font-semibold transition-all duration-300 ${
                   type?.toLowerCase() === bt.toLowerCase()
                     ? "border-neutral-950 bg-neutral-950 text-white shadow-lg"
@@ -476,7 +472,7 @@ export default async function CarsPage({
                       </Link>
 
                       <Link
-                        href="/book-test-drive"
+                        href={`/book-test-drive?from=${from}`}
                         className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 px-3 py-3.5 text-center text-sm font-bold text-neutral-700 transition-all duration-300 hover:border-orange-500 hover:bg-orange-50 hover:text-orange-700"
                       >
                         Test drive

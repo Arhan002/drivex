@@ -11,9 +11,9 @@ const baseNavigation = [
   { label: "Overview", href: "/dashboard", icon: "▦" },
   { label: "Lead Inbox", href: "/dashboard/leads", icon: "☷" },
   { label: "Follow-ups", href: "/dashboard/follow-ups", icon: "◷" },
-  { label: "New Cars", href: "/cars", icon: "🚘" },
-  { label: "Used Cars", href: "/used-cars", icon: "🚙" },
-  { label: "Test Drives", href: "/book-test-drive", icon: "▣" },
+  { label: "New Cars", href: "/cars?from=dashboard", icon: "🚘" },
+  { label: "Used Cars", href: "/used-cars?from=dashboard", icon: "🚙" },
+  { label: "Test Drives", href: "/book-test-drive?from=dashboard", icon: "▣" },
 ];
 
 export default function DashboardSidebar({

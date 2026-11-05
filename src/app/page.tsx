@@ -39,8 +39,8 @@ const formatPrice = (amount: number) =>
   }).format(amount);
 
 const navLinks = [
-  { href: "cars", label: "New cars" },
-  { href: "used-cars", label: "Used cars" },
+  { href: "/cars?from=home", label: "New cars" },
+  { href: "/used-cars?from=home", label: "Used cars" },
   { href: "#why-drivex", label: "Why DriveX" },
   { href: "#contact", label: "Contact" },
 ];
@@ -166,7 +166,7 @@ export default async function Home({
           </div>
 
           <Link
-            href="/book-test-drive"
+            href="/book-test-drive?from=home"
             className={`hidden rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-neutral-950 transition-colors hover:bg-orange-400 md:inline-block ${focusRing}`}
           >
             Book a test drive
@@ -193,7 +193,7 @@ export default async function Home({
                 </a>
               ))}
               <Link
-                href="/book-test-drive"
+                href="/book-test-drive?from=home"
                 className="mt-2 block rounded-xl bg-orange-500 px-4 py-3 text-center text-sm font-semibold text-neutral-950"
               >
                 Book a test drive
@@ -257,7 +257,7 @@ export default async function Home({
         </a>
 
         <a
-          href="used-cars"
+          href="/used-cars?from=home"
           className={`inline-flex items-center justify-center gap-2 rounded-full border border-white/40 bg-white/5 px-8 py-4 font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white hover:bg-white hover:text-black ${focusRing}`}
         >
           Explore pre-owned
@@ -826,7 +826,7 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
       </p>
 
       <Link
-        href="/book-test-drive"
+        href="/book-test-drive?from=home"
         className={`inline-flex items-center gap-2 text-sm font-bold text-orange-600 transition-colors hover:text-orange-700 ${focusRing}`}
       >
         Experience DriveX
@@ -849,7 +849,7 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
           </div>
 
           <Link
-            href="/book-test-drive"
+            href="/book-test-drive?from=home"
             className={`inline-flex w-full items-center justify-center gap-2 rounded-full bg-neutral-950 px-8 py-4 font-semibold text-white transition-colors hover:bg-neutral-800 md:w-auto ${focusRing}`}
           >
             Book a test drive <ArrowRight size={18} />
@@ -896,7 +896,7 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
         <ul className="mt-5 space-y-4 text-sm text-neutral-400">
           <li>
             <a
-              href="/cars"
+              href="/cars?from=home"
               className="transition-colors hover:text-orange-500"
             >
               New cars
@@ -923,7 +923,7 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
 
           <li>
             <Link
-              href="/book-test-drive"
+              href="/book-test-drive?from=home"
               className="transition-colors hover:text-orange-500"
             >
               Book a test drive

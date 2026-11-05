@@ -42,14 +42,13 @@ function formatKilometres(km: number) {
   return new Intl.NumberFormat("en-IN").format(km);
 }
 
-function TopNav() {
+function TopNav({ backHref, from }: { backHref: string; from: string }) {
   return (
     <header className="sticky top-0 z-30 border-b border-neutral-200/70 bg-white/90 backdrop-blur-xl">
       <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-8">
-
         <div className="flex items-center gap-5">
           <Link
-            href="/"
+            href={backHref}
             className="flex items-center gap-2 text-sm font-semibold text-neutral-500 transition hover:text-orange-600"
           >
             <ArrowLeft size={17} />
@@ -65,21 +64,19 @@ function TopNav() {
         </div>
 
         <nav className="hidden items-center gap-8 text-sm font-medium text-neutral-600 sm:flex">
-          <Link href="/cars" className="transition hover:text-orange-600">
+          <Link href={`/cars?from=${from}`} className="transition hover:text-orange-600">
             New Cars
           </Link>
-
-          <Link href="/used-cars" className="font-bold text-orange-600">
+          <Link href={`/used-cars?from=${from}`} className="font-bold text-orange-600">
             Used Cars
           </Link>
-
-          <Link href="/book-test-drive" className="transition hover:text-orange-600">
+          <Link href={`/book-test-drive?from=${from}`} className="transition hover:text-orange-600">
             Test Drives
           </Link>
         </nav>
 
         <Link
-          href="/book-test-drive"
+          href={`/book-test-drive?from=${from}`}
           className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-5 py-3 text-xs font-bold text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-orange-400 hover:shadow-lg sm:text-sm"
         >
           Book a test drive
@@ -90,7 +87,14 @@ function TopNav() {
   );
 }
 
-export default async function UsedCarsPage() {
+export default async function UsedCarsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const { from: source } = await searchParams;
+  const from = source === "dashboard" ? "dashboard" : "home";
+  const backHref = from === "dashboard" ? "/dashboard" : "/";
   const supabase = await createClient();
 
   const { data: cars, error } = await supabase
@@ -107,7 +111,7 @@ export default async function UsedCarsPage() {
 
   return (
     <main className="min-h-screen bg-[#f7f7f5] text-neutral-950">
-      <TopNav />
+      <TopNav backHref={backHref} from={from} />
 
       {/* PREMIUM HERO */}
       <section className="relative isolate overflow-hidden bg-[#090909] px-5 py-20 text-white sm:px-8 lg:py-28">

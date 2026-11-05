@@ -1,6 +1,6 @@
 "use client";
-
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -64,6 +64,10 @@ function StepHeader({
 }
 
 export default function BookTestDrivePage() {
+    const searchParams = useSearchParams();
+  const source = searchParams.get("from");
+  const from = source === "dashboard" ? "dashboard" : "home";
+  const backHref = from === "dashboard" ? "/dashboard" : "/";
   const [showrooms, setShowrooms] = useState<Showroom[]>([]);
   const [vehicles, setVehicles] = useState<DemoVehicle[]>([]);
 
@@ -205,12 +209,12 @@ export default function BookTestDrivePage() {
             DRIVE<span className="text-orange-500">X.</span>
           </Link>
           <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 transition hover:text-neutral-950"
-          >
-            <ArrowLeft size={16} />
-            Back to home
-          </Link>
+  href={backHref}
+  className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 transition hover:text-neutral-950"
+>
+  <ArrowLeft size={16} />
+  {from === "dashboard" ? "Back to dashboard" : "Back to home"}
+</Link>
         </div>
       </header>
 

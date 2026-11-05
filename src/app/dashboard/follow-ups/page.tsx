@@ -209,19 +209,19 @@ function Section({
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-5 py-10 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-gray-50 text-2xl">
-            {styles[status].icon}
-          </div>
+        <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-5 py-6 text-center">
+  <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50 text-xl">
+    {styles[status].icon}
+  </div>
 
-          <p className="mt-3 text-sm font-semibold text-gray-700">
-            {emptyText}
-          </p>
+  <p className="mt-2 text-sm font-semibold text-gray-700">
+    {emptyText}
+  </p>
 
-          <p className="mt-1 text-xs text-gray-400">
-            Your reminder activity will appear here.
-          </p>
-        </div>
+  <p className="mt-1 text-xs text-gray-400">
+    Your reminder activity will appear here.
+  </p>
+</div>
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">
           {items.map((item) => (

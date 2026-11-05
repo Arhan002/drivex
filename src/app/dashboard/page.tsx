@@ -221,19 +221,19 @@ export default async function DashboardPage() {
     {
       title: "New Car Inventory",
       description: "Explore new car models",
-      href: "/cars",
+      href: "/cars?from=dashboard",
       icon: "🚘",
     },
     {
       title: "Used Cars",
       description: "Browse pre-owned vehicles",
-      href: "/used-cars",
+      href: "/used-cars?from=dashboard",
       icon: "🚙",
     },
     {
       title: "Book Test Drive",
       description: "Open the booking experience",
-      href: "/book-test-drive",
+      href: "/book-test-drive?from=dashboard",
       icon: "▣",
     },
   ];
@@ -291,7 +291,7 @@ export default async function DashboardPage() {
           </div>
 
           <Link
-            href="/cars"
+            href="/cars?from=dashboard"
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-100 transition hover:-translate-y-0.5 hover:bg-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
           >
             <span className="text-lg leading-none">+</span>
