@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { connection } from "next/server";
 
 import {
   Users,
@@ -41,6 +42,8 @@ function formatDate(date: string) {
 }
 
 export default async function DashboardPage() {
+  await connection();
+
   const supabase = await createClient();
 
   // 1. Authenticate the user

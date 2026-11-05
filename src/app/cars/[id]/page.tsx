@@ -54,13 +54,13 @@ const money = (amount: number) =>
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500";
 
-function TopNav() {
+function TopNav({ from }: { from: string }) {
   return (
     <header className="sticky top-0 z-30 border-b border-neutral-200/70 bg-white/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:h-[76px] sm:px-8">
         <div className="flex items-center gap-4">
           <Link
-            href="/cars"
+            href={`/cars?from=${from}`}
             className={`flex items-center gap-2 rounded-full px-2 py-1.5 text-sm font-semibold text-neutral-500 transition hover:text-orange-600 ${focusRing}`}
           >
             <ArrowLeft size={17} />
@@ -77,19 +77,19 @@ function TopNav() {
 
         <nav className="hidden items-center gap-1 rounded-full bg-neutral-100 p-1 text-sm font-semibold sm:flex">
           <Link
-            href="/cars"
+            href={`/cars?from=${from}`}
             className={`rounded-full bg-white px-4 py-2 text-neutral-950 shadow-sm ${focusRing}`}
           >
             New cars
           </Link>
           <Link
-            href="/used-cars"
+            href={`/used-cars?from=${from}`}
             className={`rounded-full px-4 py-2 text-neutral-600 transition hover:text-neutral-950 ${focusRing}`}
           >
             Used cars
           </Link>
           <Link
-            href="/book-test-drive"
+            href={`/book-test-drive?from=${from}`}
             className={`rounded-full px-4 py-2 text-neutral-600 transition hover:text-neutral-950 ${focusRing}`}
           >
             Test drives
@@ -97,7 +97,7 @@ function TopNav() {
         </nav>
 
         <Link
-          href="/book-test-drive"
+          href={`/book-test-drive?from=${from}`}
           className={`inline-flex shrink-0 items-center gap-2 rounded-full bg-orange-500 px-4 py-2.5 text-xs font-bold text-neutral-950 shadow-lg shadow-orange-500/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-orange-400 sm:px-5 sm:py-3 sm:text-sm ${focusRing}`}
         >
           <span className="hidden sm:inline">Book a test drive</span>
@@ -111,10 +111,14 @@ function TopNav() {
 
 export default async function CarDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { id } = await params;
+  const { from: source } = await searchParams;
+  const from = source === "dashboard" ? "dashboard" : "home";
   const supabase = await createClient();
 
   // Fetch car details
@@ -168,7 +172,7 @@ export default async function CarDetailPage({
           </p>
 
           <Link
-            href="/cars"
+            href={`/cars?from=${from}`}
             className={`mt-8 inline-flex items-center gap-2 rounded-full bg-neutral-950 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-orange-500 hover:text-neutral-950 ${focusRing}`}
           >
             <ArrowLeft size={16} />
@@ -221,7 +225,7 @@ export default async function CarDetailPage({
 
   return (
     <main className="min-h-screen bg-[#f7f7f5] text-neutral-950">
-      <TopNav />
+      <TopNav from={from} />
 
       {/* VEHICLE HERO */}
       <section className="relative isolate overflow-hidden bg-[#090909] text-white">

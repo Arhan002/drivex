@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+
 type Showroom = {
   id: string;
   name: string;
@@ -41,6 +42,7 @@ export default function ConsultantManagement({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [phone, setPhone] = useState("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -57,6 +59,7 @@ export default function ConsultantManagement({
         body: JSON.stringify({
           fullName,
           email,
+          phone,
           showroomId,
         }),
       });
@@ -70,6 +73,7 @@ export default function ConsultantManagement({
       setMessage("Invitation sent successfully!");
       setFullName("");
       setEmail("");
+      setPhone("");
       setShowroomId("");
 
       window.location.reload();
@@ -191,6 +195,25 @@ export default function ConsultantManagement({
                   className={inputClass}
                 />
               </div>
+              <div>
+  <label
+    htmlFor="phone"
+    className="mb-2 block text-sm font-semibold text-gray-800"
+  >
+    Phone Number
+  </label>
+  <input
+    id="phone"
+    type="tel"
+    required
+    maxLength={10}
+    pattern="[0-9]{10}"
+    value={phone}
+    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+    placeholder="Enter 10-digit phone number"
+    className={inputClass}
+  />
+</div>
 
               <div>
                 <label

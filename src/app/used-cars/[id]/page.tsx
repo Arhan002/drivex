@@ -44,10 +44,14 @@ function formatPrice(price: number) {
 
 export default async function UsedCarDetailsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { id } = await params;
+  const { from: source } = await searchParams;
+  const from = source === "dashboard" ? "dashboard" : "home";
   const supabase = await createClient();
 
   const { data: car, error } = await supabase
@@ -123,7 +127,7 @@ export default async function UsedCarDetailsPage({
         <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-8">
 
           <Link
-            href="/used-cars"
+            href={`/used-cars?from=${from}`}
             className="flex items-center gap-2 text-sm font-semibold text-neutral-500 transition hover:text-orange-600"
           >
             <ArrowLeft size={17} />
@@ -138,7 +142,7 @@ export default async function UsedCarDetailsPage({
           </Link>
 
           <Link
-            href="/book-test-drive"
+            href={`/book-test-drive?from=${from}`}
             className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-5 py-3 text-xs font-bold text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-orange-400 hover:shadow-lg sm:text-sm"
           >
             Book a test drive
@@ -350,7 +354,7 @@ export default async function UsedCarDetailsPage({
 
     <div className="mt-8 text-center">
       <Link
-        href="/used-cars"
+        href={`/used-cars?from=${from}`}
         className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 transition hover:text-orange-700"
       >
         <ArrowLeft size={16} />
@@ -376,7 +380,7 @@ export default async function UsedCarDetailsPage({
           </p>
 
           <Link
-            href="/used-cars"
+            href={`/used-cars?from=${from}`}
             className="text-sm font-semibold text-neutral-400 transition hover:text-orange-500"
           >
             Back to used cars ↑

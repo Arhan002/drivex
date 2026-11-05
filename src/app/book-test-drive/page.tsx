@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -63,7 +63,7 @@ function StepHeader({
   );
 }
 
-export default function BookTestDrivePage() {
+function BookTestDriveContent() {
     const searchParams = useSearchParams();
   const source = searchParams.get("from");
   const from = source === "dashboard" ? "dashboard" : "home";
@@ -475,5 +475,20 @@ export default function BookTestDrivePage() {
         </div>
       </div>
     </main>
+  );
+}
+
+// Keep useSearchParams inside a Suspense boundary during prerendering.
+export default function BookTestDrivePage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-neutral-100 text-neutral-600">
+          Loading test drive booking...
+        </main>
+      }
+    >
+      <BookTestDriveContent />
+    </Suspense>
   );
 }

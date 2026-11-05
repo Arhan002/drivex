@@ -3,10 +3,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import ConsultantManagement from "@/components/ConsultantManagement";
-
+import { connection } from "next/server";
 export const instant = false;
 
 export default async function ConsultantsPage() {
+  await connection();
+
   const supabase = await createClient();
 
   const {

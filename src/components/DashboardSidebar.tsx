@@ -26,28 +26,39 @@ export default function DashboardSidebar({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [role, setRole] = useState<string | null>(null);
+  const [showroomName, setShowroomName] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadRole() {
-      const supabase = createClient();
+  async function loadRole() {
+    const supabase = createClient();
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      if (!user) return;
+    if (!user) return;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role, showroom_id")
+      .eq("id", user.id)
+      .single();
+
+    setRole(profile?.role ?? null);
+
+    if (profile?.showroom_id) {
+      const { data: showroom } = await supabase
+        .from("showrooms")
+        .select("name")
+        .eq("id", profile.showroom_id)
         .single();
 
-      setRole(profile?.role ?? null);
+      setShowroomName(showroom?.name ?? null);
     }
+  }
 
-    loadRole();
-  }, []);
+  loadRole();
+}, []);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -186,8 +197,10 @@ export default function DashboardSidebar({
         >
           {!collapsed && (
             <div className="rounded-2xl border border-white/5 bg-white/[0.04] p-4">
-              <p className="text-xs text-slate-400">DriveX Dealership</p>
-              <p className="mt-1 text-sm font-semibold">Lucknow, India</p>
+              <p className="text-xs text-slate-400">Assigned Showroom</p>
+<p className="mt-1 text-sm font-semibold">
+  {showroomName ?? (role === "admin" ? "Lucknow, India" : "Showroom not assigned")}
+</p>
 
               <div className="mt-4 flex items-center gap-2 text-xs text-emerald-400">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />

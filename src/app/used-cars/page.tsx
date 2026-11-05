@@ -397,7 +397,7 @@ export default async function UsedCarsPage({
 
                   {/* Vehicle action */}
                   <Link
-                    href={`/used-cars/${car.id}`}
+                    href={`/used-cars/${car.id}?from=${from}`}
                     className="group/details mt-auto flex items-center justify-between rounded-xl bg-neutral-950 px-5 py-4 text-sm font-bold text-white transition-all duration-300 hover:bg-orange-500 hover:text-black hover:shadow-lg"
                   >
                     <span>View vehicle details</span>

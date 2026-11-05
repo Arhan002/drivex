@@ -113,31 +113,34 @@ export default function EnquiryForm({
     <section className="bg-[#f7f7f5] px-4 py-16 sm:px-8 lg:py-24">
       <div className="mx-auto max-w-7xl">
 
-        {/* Section heading */}
-        <div className="mb-10 overflow-hidden rounded-[2rem] bg-[#090909] p-8 text-white shadow-xl sm:p-12">
-          <div className="flex flex-col justify-between gap-8 md:flex-row md:items-center">
-            <div className="max-w-2xl">
-              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-orange-400">
-                <Sparkles size={15} />
-                Your next step
-              </p>
+        {/* Keep the generic enquiry banner for used cars.
+            New car details already display a model-specific enquiry banner. */}
+        {source === "used_car" && (
+          <div className="mb-10 overflow-hidden rounded-[2rem] bg-[#090909] p-8 text-white shadow-xl sm:p-12">
+            <div className="flex flex-col justify-between gap-8 md:flex-row md:items-center">
+              <div className="max-w-2xl">
+                <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-orange-400">
+                  <Sparkles size={15} />
+                  Your next step
+                </p>
 
-              <h2 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-5xl">
-                Interested in this car
-                <span className="text-orange-500">?</span>
-              </h2>
+                <h2 className="mt-5 text-3xl font-extrabold tracking-tight sm:text-5xl">
+                  Interested in this car
+                  <span className="text-orange-500">?</span>
+                </h2>
 
-              <p className="mt-4 max-w-xl text-sm leading-7 text-neutral-400 sm:text-base">
-                Tell us what you're looking for. Our dealership team
-                will help you with pricing, availability and the next steps.
-              </p>
-            </div>
+                <p className="mt-4 max-w-xl text-sm leading-7 text-neutral-400 sm:text-base">
+                  Tell us what you're looking for. Our dealership team
+                  will help you with pricing, availability and the next steps.
+                </p>
+              </div>
 
-            <div className="hidden h-20 w-20 shrink-0 items-center justify-center rounded-3xl border border-white/10 bg-white/5 text-orange-400 md:flex">
-              <User size={36} strokeWidth={1.5} />
+              <div className="hidden h-20 w-20 shrink-0 items-center justify-center rounded-3xl border border-white/10 bg-white/5 text-orange-400 md:flex">
+                <User size={36} strokeWidth={1.5} />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Form card */}
         <div className="stagger-item rounded-[2rem] border border-neutral-200 bg-white p-5 shadow-sm transition-all duration-500 hover:shadow-xl sm:p-8 lg:p-12">
@@ -429,3 +432,4 @@ export default function EnquiryForm({
     </section>
   );
 }
+ 

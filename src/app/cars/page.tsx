@@ -461,8 +461,8 @@ export default async function CarsPage({
                     <div className="mt-auto grid grid-cols-2 gap-3 pt-7">
 
                       <Link
-                        href={`/cars/${car.id}`}
-                        className="group/details flex items-center justify-center gap-2 rounded-xl bg-neutral-950 px-3 py-3.5 text-center text-sm font-bold text-white transition-all duration-300 hover:bg-orange-500 hover:text-black"
+href={`/cars/${car.id}?from=${from}`}                        
+className="group/details flex items-center justify-center gap-2 rounded-xl bg-neutral-950 px-3 py-3.5 text-center text-sm font-bold text-white transition-all duration-300 hover:bg-orange-500 hover:text-black"
                       >
                         Details
                         <ChevronRight
