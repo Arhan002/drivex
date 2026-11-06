@@ -199,6 +199,18 @@ export default async function CarDetailPage({
   }
 
   const showrooms: Showroom[] = showroomData ?? [];
+  const { data: modelData, error: modelError } = await supabase
+  .from("car_models")
+  .select("id, name")
+  .eq("is_active", true)
+  .order("name");
+
+if (modelError) {
+  console.error("Car models query error:", modelError.message);
+  throw new Error("Unable to load car models.");
+}
+
+const models = modelData ?? [];
 
   const car = data as unknown as CarDetail;
   const variants = car.car_variants ?? [];
@@ -582,6 +594,7 @@ export default async function CarDetailPage({
               source="new_car"
               modelId={car.id}
               showrooms={showrooms}
+              models={models}
             />
           </div>
         </div>

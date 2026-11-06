@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type BuyerSummaryData = {
   summary: string;
@@ -22,14 +22,62 @@ export default function BuyerSummary({ leadId }: BuyerSummaryProps) {
   const [source, setSource] = useState<SummarySource | null>(null);
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
 
+  // Retrieve previously saved summary when the lead opens
+  useEffect(() => {
+    let active = true;
+
+    async function fetchSavedSummary() {
+      setFetching(true);
+      setError("");
+
+      try {
+        const response = await fetch(
+          `/api/ai/buyer-summary?leadId=${encodeURIComponent(leadId)}`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(
+            data.error || "Unable to retrieve buyer summary."
+          );
+        }
+
+        if (active) {
+          setSummary(data.buyerSummary);
+          setSource(data.source);
+          setNotice(data.notice || "");
+        }
+      } catch (err) {
+        if (active) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to retrieve buyer summary."
+          );
+        }
+      } finally {
+        if (active) {
+          setFetching(false);
+        }
+      }
+    }
+
+    fetchSavedSummary();
+
+    return () => {
+      active = false;
+    };
+  }, [leadId]);
+
+  // Generate and save a new summary
   async function generateSummary() {
     setLoading(true);
     setError("");
     setNotice("");
-    setSummary(null);
-    setSource(null);
 
     try {
       const response = await fetch("/api/ai/buyer-summary", {
@@ -43,7 +91,9 @@ export default function BuyerSummary({ leadId }: BuyerSummaryProps) {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || "Unable to generate buyer summary.");
+        throw new Error(
+          data.error || "Unable to generate buyer summary."
+        );
       }
 
       setSummary(data.buyerSummary);
@@ -75,14 +125,23 @@ export default function BuyerSummary({ leadId }: BuyerSummaryProps) {
 
         <button
           onClick={generateSummary}
-          disabled={loading}
+          disabled={loading || fetching}
           className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading ? "Analysing..." : "✦ Generate AI Summary"}
+          {loading
+            ? "Analysing..."
+            : "✦ Generate AI Summary"}
         </button>
       </div>
 
-      {/* Loading */}
+      {/* Initial retrieval */}
+      {fetching && (
+        <p className="mt-4 text-sm text-gray-600">
+          Loading saved buyer summary...
+        </p>
+      )}
+
+      {/* Generation loading */}
       {loading && (
         <p className="mt-4 text-sm text-gray-600">
           Analysing customer information...
@@ -96,7 +155,7 @@ export default function BuyerSummary({ leadId }: BuyerSummaryProps) {
         </div>
       )}
 
-      {/* Generated summary */}
+      {/* Generated or retrieved summary */}
       {summary && (
         <div className="mt-4 space-y-4 border-t border-orange-200 pt-4">
           {/* Summary source */}
@@ -132,7 +191,9 @@ export default function BuyerSummary({ leadId }: BuyerSummaryProps) {
           {/* Buying intent and confidence */}
           <div className="flex flex-wrap gap-3">
             <div className="rounded-lg bg-white px-3 py-2">
-              <p className="text-xs text-gray-500">Buying intent</p>
+              <p className="text-xs text-gray-500">
+                Buying intent
+              </p>
               <p className="mt-1 font-semibold text-gray-900">
                 {summary.buyingIntent}
               </p>

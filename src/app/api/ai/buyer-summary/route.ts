@@ -19,6 +19,8 @@ type CustomerData = {
   transmission: string | null;
   budget: string | null;
   purchaseTimeline: string | null;
+  hasEmail: boolean;
+  hasPhone: boolean;
   leadStatus: string;
   conversationHistory: {
     note: string;
@@ -27,10 +29,20 @@ type CustomerData = {
   }[];
 };
 
+type BuyerSummaryData = {
+  summary: string;
+  buyingIntent: "High" | "Medium" | "Low" | "Uncertain";
+  recommendedAction: string;
+  missingInformation: string[];
+  confidence: "High" | "Medium" | "Low";
+};
+
 // Generate a backup summary without depending on Gemini
 function generateFallbackSummary(customer: CustomerData) {
   const missingInformation: string[] = [];
-
+  if(customer.hasEmail === false) missingInformation.push("Email address");
+  if(customer.hasPhone === false) missingInformation.push("Phone number");
+  if (!customer.name) missingInformation.push("Customer name");
   if (!customer.model) missingInformation.push("Interested car model");
   if (!customer.fuel) missingInformation.push("Fuel preference");
   if (!customer.transmission) missingInformation.push("Transmission preference");
@@ -51,7 +63,6 @@ function generateFallbackSummary(customer: CustomerData) {
     recommendedAction =
       "Confirm the test-drive appointment with the customer.";
   } else if (missingInformation.length > 0) {
-    // Ask for information that has not yet been collected
     recommendedAction =
       `Follow up with the customer to collect the following details: ${missingInformation.join(", ")}.`;
   } else if (customer.leadStatus === "new") {
@@ -89,6 +100,54 @@ function generateFallbackSummary(customer: CustomerData) {
     missingInformation,
     confidence: "Low" as const,
   };
+}
+
+// Save or update the buyer summary in Supabase
+async function saveBuyerSummary(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  leadId: string,
+  buyerSummary: BuyerSummaryData,
+  source: "gemini" | "fallback"
+) {
+  const payload = {
+    buyer_summary: buyerSummary.summary,
+    buying_intent: buyerSummary.buyingIntent,
+    confidence: buyerSummary.confidence,
+    recommended_action: buyerSummary.recommendedAction,
+    missing_information: buyerSummary.missingInformation,
+    source,
+    model_used:
+      source === "gemini" ? "gemini-3.6-flash" : "rule-based-fallback",
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data: existing, error: lookupError } = await supabase
+    .from("ai_lead_assistance")
+    .select("id")
+    .eq("lead_id", leadId)
+    .maybeSingle();
+
+  if (lookupError) {
+    throw lookupError;
+  }
+
+  if (existing) {
+    const { error } = await supabase
+      .from("ai_lead_assistance")
+      .update(payload)
+      .eq("id", existing.id);
+
+    if (error) throw error;
+  } else {
+    const { error } = await supabase
+      .from("ai_lead_assistance")
+      .insert({
+        lead_id: leadId,
+        ...payload,
+      });
+
+    if (error) throw error;
+  }
 }
 
 export async function POST(request: Request) {
@@ -153,6 +212,8 @@ export async function POST(request: Request) {
       .from("leads")
       .select(`
         id,
+        email,
+        phone,
         buyer_name,
         status,
         interested_model_id,
@@ -207,6 +268,8 @@ export async function POST(request: Request) {
       transmission: lead.transmission_preference,
       budget: lead.budget,
       purchaseTimeline: lead.purchase_timeline,
+      hasEmail: Boolean(lead.email?.trim()),
+      hasPhone: Boolean(lead.phone?.trim()),      
       leadStatus: lead.status,
       conversationHistory: (notes ?? []).map((item) => ({
         note: item.note,
@@ -215,14 +278,36 @@ export async function POST(request: Request) {
       })),
     };
 
-    // 8. Create fallback response
-    const fallback = (reason: string) =>
-      NextResponse.json({
+    // 8. Create fallback response and save it
+    const fallback = async (reason: string) => {
+      const buyerSummary = generateFallbackSummary(customerData);
+
+      try {
+        await saveBuyerSummary(
+          supabase,
+          leadId,
+          buyerSummary,
+          "fallback"
+        );
+      } catch (error) {
+        console.error("Failed to save fallback buyer summary:", error);
+
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Summary generated but could not be saved.",
+          },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
         success: true,
         source: "fallback",
         notice: reason,
-        buyerSummary: generateFallbackSummary(customerData),
+        buyerSummary,
       });
+    };
 
     // 9. Build Gemini prompt
     const prompt = `
@@ -263,12 +348,12 @@ ${JSON.stringify(customerData)}
           httpOptions: {
             timeout: 30000,
             retryOptions: {
-  attempts: 3,
-  initialDelay: 2,
-  maxDelay: 8,
-  expBase: 2,
-  jitter: 1,
-},
+              attempts: 3,
+              initialDelay: 2,
+              maxDelay: 8,
+              expBase: 2,
+              jitter: 1,
+            },
           },
         },
       });
@@ -349,8 +434,29 @@ ${JSON.stringify(customerData)}
         "Gemini returned an unexpected response. A rule-based summary is shown instead."
       );
     }
+// Ensure missing information matches the actual lead data.
+result.missingInformation =
+  generateFallbackSummary(customerData).missingInformation;
+    // 14. Save and return successful AI summary
+    try {
+      await saveBuyerSummary(
+        supabase,
+        leadId,
+        result as BuyerSummaryData,
+        "gemini"
+      );
+    } catch (error) {
+      console.error("Failed to save Gemini buyer summary:", error);
 
-    // 14. Return successful AI summary
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Summary generated but could not be saved.",
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       source: "gemini",
@@ -364,6 +470,115 @@ ${JSON.stringify(customerData)}
         success: false,
         error: "Unable to generate buyer summary. Please try again.",
       },
+      { status: 500 }
+    );
+  }
+}
+
+
+export async function GET(request: Request) {
+  try {
+    const supabase = await createClient();
+
+    // Verify authentication
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: "Please sign in to continue." },
+        { status: 401 }
+      );
+    }
+
+    // Verify staff role
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile || !["admin", "consultant"].includes(profile.role)) {
+      return NextResponse.json(
+        { success: false, error: "Not authorized." },
+        { status: 403 }
+      );
+    }
+
+    // Validate lead ID
+    const { searchParams } = new URL(request.url);
+    const leadId = searchParams.get("leadId");
+
+    if (
+      !leadId ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        leadId
+      )
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Invalid lead ID." },
+        { status: 400 }
+      );
+    }
+
+    // Check lead access
+    const { data: lead, error: leadError } = await supabase
+      .from("leads")
+      .select("id")
+      .eq("id", leadId)
+      .maybeSingle();
+
+    if (leadError || !lead) {
+      return NextResponse.json(
+        { success: false, error: "Lead not found or access denied." },
+        { status: 404 }
+      );
+    }
+
+    // Retrieve saved AI summary
+    const { data, error } = await supabase
+      .from("ai_lead_assistance")
+      .select(
+        "buyer_summary, buying_intent, confidence, recommended_action, missing_information, source"
+      )
+      .eq("lead_id", leadId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Buyer summary retrieval error:", error);
+
+      return NextResponse.json(
+        { success: false, error: "Unable to retrieve saved summary." },
+        { status: 500 }
+      );
+    }
+
+    if (!data) {
+      return NextResponse.json({
+        success: true,
+        buyerSummary: null,
+        source: null,
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      source: data.source === "fallback" ? "fallback" : "gemini",
+      buyerSummary: {
+        summary: data.buyer_summary,
+        buyingIntent: data.buying_intent,
+        confidence: data.confidence,
+        recommendedAction: data.recommended_action,
+        missingInformation: data.missing_information ?? [],
+      },
+    });
+  } catch (error) {
+    console.error("Buyer summary GET error:", error);
+
+    return NextResponse.json(
+      { success: false, error: "Unable to retrieve buyer summary." },
       { status: 500 }
     );
   }

@@ -18,6 +18,7 @@ export async function POST(request: Request) {
       transmissionPreference,
       budget,
       purchaseTimeline,
+      selectedModelId,
     } = body;
 
     if (
@@ -55,40 +56,26 @@ export async function POST(request: Request) {
       );
     }
 
-    if (source === "new_car" && !modelId) {
-      return NextResponse.json(
-        { error: "A car model is required." },
-        { status: 400 }
-      );
-    }
+    
 
     const supabase = await createClient();
 
     const { data, error } = await supabase.rpc(
-      "create_guest_enquiry",
-      {
-        p_buyer_name: buyerName.trim(),
-        p_email: email.trim().toLowerCase(),
-        p_phone: phone.trim(),
-        p_showroom_id: showroomId,
-        p_model_id: modelId || null,
-        p_source: source,
-        p_consent_given: consentGiven,
-        p_fuel_preference: fuelPreference || null,
-        p_transmission_preference: transmissionPreference || null,
-        p_budget: budget || null,
-        p_purchase_timeline: purchaseTimeline || null,
-      }
-    );
-
-    if (error) {
-      console.error("Enquiry creation error:", error.message);
-
-      return NextResponse.json(
-        { error: "Unable to submit your enquiry. Please try again." },
-        { status: 400 }
-      );
-    }
+  "create_guest_enquiry",
+  {
+    p_buyer_name: buyerName.trim(),
+    p_email: email.trim().toLowerCase(),
+    p_phone: phone.trim(),
+    p_showroom_id: showroomId,
+    p_model_id: modelId || null,
+    p_source: source,
+    p_consent_given: consentGiven,
+    p_fuel_preference: fuelPreference || null,
+    p_transmission_preference: transmissionPreference || null,
+    p_budget: budget || null,
+    p_purchase_timeline: purchaseTimeline || null,
+  }
+);
 
     return NextResponse.json(
       {

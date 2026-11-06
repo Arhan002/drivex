@@ -22,21 +22,29 @@ type Showroom = {
   city: string;
 };
 
+type CarModel = {
+  id: string;
+  name: string;
+};
+
 type EnquiryFormProps = {
   source: "new_car" | "used_car";
   modelId?: string;
   showrooms: Showroom[];
+  models?: CarModel[];
 };
 
 export default function EnquiryForm({
   source,
   modelId,
   showrooms,
+  models=[],
 }: EnquiryFormProps) {
   const [buyerName, setBuyerName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [showroomId, setShowroomId] = useState("");
+  const [selectedModelId, setSelectedModelId] = useState(modelId || "");
   const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -69,7 +77,10 @@ export default function EnquiryForm({
           email,
           phone,
           showroomId,
-          modelId,
+          modelId:
+  source === "new_car"
+    ? selectedModelId || null
+    : modelId || null,
           source,
           fuelPreference,
           transmissionPreference,
@@ -260,7 +271,31 @@ export default function EnquiryForm({
             </div>
 
             <div className="border-t border-neutral-100" />
+{source === "new_car" && (
+  <div>
+    <label
+      htmlFor="carModel"
+      className="mb-2 block text-sm font-semibold text-neutral-700"
+    >
+      Interested Car Model (Optional)
+    </label>
 
+    <select
+      id="carModel"
+      value={selectedModelId}
+      onChange={(e) => setSelectedModelId(e.target.value)}
+      className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none focus:border-orange-500"
+    >
+      <option value="">Not decided yet</option>
+
+      {models.map((model) => (
+        <option key={model.id} value={model.id}>
+          {model.name}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
             {/* Preferences */}
             <div>
               <div className="mb-5 flex items-center gap-3">
