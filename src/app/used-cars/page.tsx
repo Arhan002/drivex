@@ -288,9 +288,13 @@ export default async function UsedCarsPage({
                     Pre-owned
                   </span>
 
-                  <div className="absolute bottom-4 left-4 flex h-10 w-10 items-center justify-center rounded-full bg-white text-neutral-950 opacity-0 shadow-lg transition-all duration-300 group-hover/car:translate-x-0 group-hover/car:opacity-100">
-                    <ArrowRight size={18} />
-                  </div>
+                  <Link
+  href={`/used-cars/${car.id}?from=${from}`}
+  aria-label={`View ${car.model_name} details`}
+  className="absolute bottom-4 left-4 flex h-10 w-10 items-center justify-center rounded-full bg-white text-neutral-950 opacity-0 shadow-lg transition-all duration-300 group-hover/car:translate-x-0 group-hover/car:opacity-100 hover:bg-orange-500"
+>
+  <ArrowRight size={18} />
+</Link>
                 </div>
 
                 {/* Vehicle information */}

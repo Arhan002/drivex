@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import EnquiryForm from "@/components/EnquiryForm";
+import { connection } from "next/server";
 import {
   ArrowLeft,
   ArrowRight,
@@ -116,6 +117,8 @@ export default async function CarDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ from?: string }>;
 }) {
+  await connection();
+
   const { id } = await params;
   const { from: source } = await searchParams;
   const from = source === "dashboard" ? "dashboard" : "home";
@@ -150,7 +153,7 @@ export default async function CarDetailPage({
     .maybeSingle();
 
   if (error) {
-    console.error("Car detail query error:", error.message);
+    console.error("Car detail query error:", error);
     throw new Error("Unable to load car details.");
   }
 

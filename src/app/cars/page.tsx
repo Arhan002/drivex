@@ -3,6 +3,7 @@ export const instant = false;
 
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import {connection} from "next/server"
 import {
   ArrowRight,
   ArrowLeft,
@@ -93,6 +94,7 @@ export default async function CarsPage({
 }: {
   searchParams: Promise<{ type?: string; from?: string }>;
 }) {
+  await connection();
   const { type, from: source } = await searchParams;
   const from = source === "dashboard" ? "dashboard" : "home";
   const backHref = from === "dashboard" ? "/dashboard" : "/";
@@ -371,9 +373,13 @@ export default async function CarsPage({
                       </span>
                     )}
 
-                    <span className="absolute bottom-4 right-4 rounded-full bg-orange-500 p-3 text-black opacity-0 shadow-lg transition-all duration-300 group-hover/car:translate-x-0 group-hover/car:opacity-100">
-                      <ArrowRight size={18} />
-                    </span>
+                    <Link
+                      href={`/cars/${car.id}?from=${from}`}
+                      aria-label={`View ${car.name} details`}
+                      className="absolute bottom-4 right-4 rounded-full bg-orange-500 p-3 text-black opacity-0 shadow-lg transition-all duration-300 group-hover/car:translate-x-0 group-hover/car:opacity-100 hover:bg-orange-400"
+                      >
+                        <ArrowRight size={18} />
+                      </Link>
                   </div>
 
                   {/* Vehicle information */}
