@@ -120,7 +120,7 @@ export default async function CarDetailPage({
   await connection();
 
   const { id } = await params;
-  const { from: source } = await searchParams;
+  const { from: source } = await searchParams;  
   const from = source === "dashboard" ? "dashboard" : "home";
   const supabase = await createClient();
 
