@@ -56,11 +56,11 @@ export async function POST(request: Request) {
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json(
-        { error: "Please provide a valid email address." },
-        { status: 400 }
-      );
-    }
+  return NextResponse.json(
+    { error: "Please provide a valid email address." },
+    { status: 400 }
+  );
+}
 
     if (!/^\d{10}$/.test(phone)) {
       return NextResponse.json(
