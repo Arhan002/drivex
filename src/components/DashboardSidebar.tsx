@@ -60,9 +60,7 @@ export default function DashboardSidebar({
   loadRole();
 }, []);
 
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
+  
 
   const navigation =
     role === "admin"

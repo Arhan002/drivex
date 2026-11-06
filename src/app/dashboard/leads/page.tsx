@@ -35,6 +35,13 @@ type Assignment = {
   first_contacted_at: string | null;
 };
 
+function isResponseOverdue(assignment: Assignment) {
+  return (
+    !assignment.first_contacted_at &&
+    new Date(assignment.response_due_at).getTime() < Date.now()
+  );
+}
+
 type BookingInfo = {
   id : string;
   lead_id: string;
@@ -436,11 +443,7 @@ console.log("Booking query error:", bookingError);
     },
   ];
 
-  const overdueCount = assignments.filter(
-    (item) =>
-      !item.first_contacted_at &&
-      new Date(item.response_due_at).getTime() < Date.now()
-  ).length;
+  const overdueCount = assignments.filter(isResponseOverdue).length;
 
   return (
   <div className="min-h-screen bg-[#f5f6f8] text-slate-900">

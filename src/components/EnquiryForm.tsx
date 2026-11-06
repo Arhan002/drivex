@@ -141,7 +141,7 @@ export default function EnquiryForm({
                 </h2>
 
                 <p className="mt-4 max-w-xl text-sm leading-7 text-neutral-400 sm:text-base">
-                  Tell us what you're looking for. Our dealership team
+                  Tell us what you&apos;re looking for. Our dealership team
                   will help you with pricing, availability and the next steps.
                 </p>
               </div>
@@ -162,11 +162,11 @@ export default function EnquiryForm({
             </p>
 
             <h3 className="mt-2 text-2xl font-extrabold text-neutral-950 sm:text-3xl">
-              Let's get to know you.
+              Let&apos;s get to know you.
             </h3>
 
             <p className="mt-2 text-sm text-neutral-500">
-              Share your details and we'll get in touch with you.
+              Share your details and we&apos;ll get in touch with you.
             </p>
           </div>
 
@@ -308,7 +308,7 @@ export default function EnquiryForm({
                     Your preferences
                   </h4>
                   <p className="text-xs text-neutral-500">
-                    Help us understand what you're looking for
+                    Help us understand what you&apos;re looking for
                   </p>
                 </div>
               </div>

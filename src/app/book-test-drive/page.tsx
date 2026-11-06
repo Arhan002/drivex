@@ -89,39 +89,38 @@ function BookTestDriveContent() {
 
   // Load the current local date and booking options after mounting.
   useEffect(() => {
-    const now = new Date();
+  async function loadOptions() {
+    try {
+      const response = await fetch("/api/booking-options");
 
-    const localDate = [
-      now.getFullYear(),
-      String(now.getMonth() + 1).padStart(2, "0"),
-      String(now.getDate()).padStart(2, "0"),
-    ].join("-");
+      const now = new Date();
+      const localDate = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, "0"),
+        String(now.getDate()).padStart(2, "0"),
+      ].join("-");
 
-    setToday(localDate);
+      setToday(localDate);
 
-    async function loadOptions() {
-      try {
-        const response = await fetch("/api/booking-options");
-
-        if (!response.ok) {
-          throw new Error("Unable to load booking options.");
-        }
-
-        const data = await response.json();
-
-        setShowrooms(data.showrooms ?? []);
-        setVehicles(data.vehicles ?? []);
-      } catch (error) {
-        setMessage(
-          error instanceof Error
-            ? error.message
-            : "Unable to load options."
-        );
+      if (!response.ok) {
+        throw new Error("Unable to load booking options.");
       }
-    }
 
-    loadOptions();
-  }, []);
+      const data = await response.json();
+
+      setShowrooms(data.showrooms ?? []);
+      setVehicles(data.vehicles ?? []);
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to load options."
+      );
+    }
+  }
+
+  void loadOptions();
+}, []);
 
   // Show only vehicles available at the selected showroom.
   const filteredVehicles = vehicles.filter(

@@ -170,7 +170,7 @@ export default async function CarDetailPage({
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-neutral-500">
-            We couldn't find the vehicle you were looking for. It may have
+            We couldn&apos;t find the vehicle you were looking for. It may have
             been removed or is no longer available.
           </p>
 
@@ -584,7 +584,7 @@ const models = modelData ?? [];
               Interested in {car.name}?
             </h2>
             <p className="mt-4 max-w-xl text-sm leading-7 text-neutral-400">
-              Tell us what you're looking for and our dealership team will
+              Tell us what you&apos;re looking for and our dealership team will
               help you with the next steps.
             </p>
           </div>

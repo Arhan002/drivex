@@ -4,6 +4,10 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+function getCurrentTimestamp() {
+  return Date.now();
+}
+
 type Followup = {
   id: string;
   note: string;
@@ -23,11 +27,9 @@ export default function LeadFollowup({
   const [loading, setLoading] = useState(false);
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
-
-  // Current time is initially unknown during prerendering
   const [currentTime, setCurrentTime] = useState<number | null>(null);
 
-  // Load follow-up notes from Supabase
+  // Load follow-up notes after saving or completing an entry.
   async function loadNotes() {
     const supabase = createClient();
 
@@ -43,15 +45,47 @@ export default function LeadFollowup({
     }
 
     setNotes(data ?? []);
+    setCurrentTime(getCurrentTimestamp());
   }
 
-  // Run after the component mounts in the browser
+  // Load initial notes when the lead changes.
   useEffect(() => {
-    setCurrentTime(Date.now());
-    loadNotes();
-  }, [leadId]);
+  let isActive = true;
 
-  // Save a new follow-up note
+  const timer = window.setTimeout(() => {
+    if (isActive) {
+      setCurrentTime(getCurrentTimestamp());
+    }
+  }, 0);
+
+  async function fetchInitialNotes() {
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+      .from("lead_followups")
+      .select("id, note, follow_up_at, created_at, completed_at")
+      .eq("lead_id", leadId)
+      .order("created_at", { ascending: false });
+
+    if (!isActive) return;
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setNotes(data ?? []);
+  }
+
+  void fetchInitialNotes();
+
+  return () => {
+    isActive = false;
+    window.clearTimeout(timer);
+  };
+}, [leadId]);
+
+  // Save a new follow-up note.
   async function saveNote(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -104,7 +138,7 @@ export default function LeadFollowup({
     }
   }
 
-  // Mark a follow-up as completed using the secure RPC
+  // Mark a follow-up as completed using the secure RPC.
   async function markCompleted(id: string) {
     setCompletingId(id);
     setMessage("");
@@ -134,7 +168,7 @@ export default function LeadFollowup({
     }
   }
 
-  // Format dates for display
+  // Format dates for display.
   function formatDate(value: string) {
     return new Date(value).toLocaleString("en-IN", {
       dateStyle: "medium",
@@ -142,7 +176,7 @@ export default function LeadFollowup({
     });
   }
 
-  // Determine follow-up reminder status
+  // Determine follow-up reminder status.
   function getReminderStatus(item: Followup) {
     if (item.completed_at) {
       return {
@@ -184,7 +218,7 @@ export default function LeadFollowup({
     };
   }
 
-  // Calculate reminder counts
+  // Calculate reminder counts.
   const overdueCount =
     currentTime === null
       ? 0

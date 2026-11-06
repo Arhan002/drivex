@@ -51,12 +51,51 @@ const photos = [
   "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=900&q=80",
 ];
 
+
+type CarPrice = {
+  city: string;
+  ex_showroom_price: number | string | null;
+  road_tax: number | string | null;
+  insurance: number | string | null;
+  accessories: number | string | null;
+  valid_until: string | null;
+};
+
+type CarVariant = {
+  id: string;
+  variant_name: string;
+  fuel_type: string | null;
+  transmission: string | null;
+  car_prices: CarPrice[];
+};
+
+type CarModel = {
+  id: string;
+  name: string;
+  description: string | null;
+  body_type: string | null;
+  image_url: string | null;
+  car_variants: CarVariant[];
+};
+
+type UsedCar = {
+  id: string;
+  stock_id: string;
+  model_name: string;
+  variant_name: string | null;
+  manufacturing_year: number | string;
+  kilometres_driven: number | string | null;
+  fuel_type: string | null;
+  selling_price: number | string;
+  image_url: string | null;
+};
+
 // Takes the first variant, finds its Lucknow price row, and adds up the
 // on-road total (ex-showroom + road tax + insurance + accessories).
 // onRoad is null when there's no Lucknow price, so the UI shows "Price on request".
-function getLucknowPrice(car: any) {
+function getLucknowPrice(car: CarModel) {
   const variant = car.car_variants?.[0];
-  const price = variant?.car_prices?.find((p: any) => p.city === "Lucknow");
+  const price = variant?.car_prices?.find((p) => p.city === "Lucknow");
   const onRoad = price
     ? Number(price.ex_showroom_price) +
       Number(price.road_tax) +
@@ -118,8 +157,8 @@ export default async function Home({
     .order("created_at", { ascending: false });
 
   // If a query fails, `data` is null, so fall back to empty lists
-  const models = modelData ?? [];
-  const usedCars = usedData ?? [];
+  const models = (modelData ?? []) as CarModel[];
+  const usedCars = (usedData ?? []) as UsedCar[];
 
   // Log errors on the server only when something actually fails
   if (modelError) console.error("NEW CAR QUERY:", modelError.message);
@@ -128,15 +167,15 @@ export default async function Home({
   // Body type filter (works without client JS: /?body=SUV)
   // 1) collect the unique body types for the chips
   const bodyTypes = Array.from(
-    new Set(models.map((m: any) => m.body_type).filter(Boolean))
+    new Set(models.map((m) => m.body_type).filter((type): type is string => Boolean(type)))
   ) as string[];
   // 2) keep only the models that match the selected chip (or all if none)
   const visibleModels = selectedBody
-    ? models.filter((m: any) => m.body_type === selectedBody)
+    ? models.filter((m) => m.body_type === selectedBody)
     : models;
 
   // The hero card shows the first model from the database
-  const featured: any = models[0];
+  const featured = models[0];
   const featuredPrice = featured ? getLucknowPrice(featured) : null;
 
   return (
@@ -256,13 +295,13 @@ export default async function Home({
           <ArrowRight size={19} className="transition-transform duration-300 group-hover:translate-x-1" />
         </a>
 
-        <a
+        <Link
           href="/used-cars?from=home"
           className={`inline-flex items-center justify-center gap-2 rounded-full border border-white/40 bg-white/5 px-8 py-4 font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white hover:bg-white hover:text-black ${focusRing}`}
         >
           Explore pre-owned
           <ChevronRight size={18} />
-        </a>
+        </Link>
       </div>
 
       {/* Dealership highlights */}
@@ -408,7 +447,7 @@ export default async function Home({
       role="alert"
       className="mb-6 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700"
     >
-      We couldn't load new cars. Check the database connection and
+      We couldn&apos;t load new cars. Check the database connection and
       access policies, then refresh.
     </p>
   )}
@@ -430,7 +469,7 @@ export default async function Home({
     </div>
   ) : (
     <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-      {visibleModels.map((car: any, index: number) => {
+      {visibleModels.map((car, index) => {
         const { variant, price, onRoad } = getLucknowPrice(car);
 
         return (
@@ -604,7 +643,7 @@ export default async function Home({
         role="alert"
         className="mb-6 rounded-2xl border border-red-900 bg-red-950/50 p-4 text-sm text-red-300"
       >
-        We couldn't load used cars. Refresh to try again.
+        We couldn&apos;t load used cars. Refresh to try again.
       </p>
     )}
 
@@ -623,7 +662,7 @@ export default async function Home({
 
       /* Three-column vehicle grid */
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-        {usedCars.map((car: any, index: number) => (
+        {usedCars.map((car, index) => (
           <article
             key={car.id}
             className="group/car stagger-item animate-hover flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#191919] shadow-lg transition-all duration-500 hover:border-orange-500/40 hover:shadow-2xl motion-reduce:transition-none"
@@ -844,7 +883,7 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
               Drive it before you decide.
             </h2>
             <p className="mt-3 max-w-md text-neutral-900/80">
-              Pick a car and a showroom. We'll have it ready when you arrive.
+              Pick a car and a showroom. We&apos;ll have it ready when you arrive.
             </p>
           </div>
 
@@ -895,12 +934,12 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
 
         <ul className="mt-5 space-y-4 text-sm text-neutral-400">
           <li>
-            <a
+            <Link
               href="/cars?from=home"
               className="transition-colors hover:text-orange-500"
             >
               New cars
-            </a>
+            </Link>
           </li>
 
           <li>
