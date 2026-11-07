@@ -135,20 +135,31 @@ const {
   data: { user },
 } = await supabase.auth.getUser();
 
-// Fetch the user's role
+// Fetch the buyer's profile details and role
 let userRole: string | null = null;
+let buyerDetails: {
+  fullName: string;
+  email: string;
+  phone: string;
+} | null = null;
 
 if (user) {
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("role")
+    .select("full_name, phone, role")
     .eq("id", user.id)
     .maybeSingle();
 
   if (profileError) {
-    console.error("Profile role query error:", profileError.message);
+    console.error("Profile query error:", profileError.message);
   } else {
     userRole = profile?.role ?? null;
+
+    buyerDetails = {
+      fullName: profile?.full_name ?? user.user_metadata?.full_name ?? "",
+      email: user.email ?? "",
+      phone: profile?.phone ?? user.user_metadata?.phone ?? "",
+    };
   }
 }
 
@@ -634,6 +645,7 @@ const models = modelData ?? [];
           showrooms={showrooms}
           models={models}
           userRole={userRole}
+          buyerDetails={buyerDetails}
         />
       </div>
 

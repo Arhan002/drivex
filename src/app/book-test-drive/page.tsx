@@ -1,4 +1,5 @@
 "use client";
+import { createClient } from "@/lib/supabase/client";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -91,6 +92,7 @@ function BookTestDriveContent() {
   const [buyerName, setBuyerName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [isAuthenticatedBuyer, setIsAuthenticatedBuyer] = useState(false);
 
   const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -131,6 +133,46 @@ function BookTestDriveContent() {
 
   void loadOptions();
 }, []);
+
+  // Automatically fill contact details for logged-in buyers.
+  useEffect(() => {
+    async function loadBuyerDetails() {
+      try {
+        const supabase = createClient();
+
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
+
+        if (authError || !user) return;
+
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("full_name, phone, role")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error("Unable to load buyer profile:", profileError);
+          return;
+        }
+
+        if (profile?.role?.trim().toLowerCase() !== "buyer") return;
+
+        setIsAuthenticatedBuyer(true);
+        setBuyerName(
+          profile.full_name || user.user_metadata?.full_name || ""
+        );
+        setEmail(user.email || "");
+        setPhone(profile.phone || user.user_metadata?.phone || "");
+      } catch (error) {
+        console.error("Unable to load buyer details:", error);
+      }
+    }
+
+    void loadBuyerDetails();
+  }, []);
 
   // Show only vehicles available at the selected showroom.
   const filteredVehicles = vehicles.filter(
@@ -186,10 +228,14 @@ function BookTestDriveContent() {
         `Booking successful! Booking ID: ${result.booking.booking_id}`
       );
 
-      // Reset form after successful booking.
-      setBuyerName("");
-      setEmail("");
-      setPhone("");
+      // Keep authenticated buyers' contact details for their next booking.
+      // Clear contact details only for guests.
+      if (!isAuthenticatedBuyer) {
+        setBuyerName("");
+        setEmail("");
+        setPhone("");
+      }
+
       setShowroomId("");
       setVehicleId("");
       setDate("");

@@ -1,6 +1,7 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { sendTestDriveBookingEmail } from "@/lib/emails/test-drive";
 
 export async function POST(request: Request) {
   try {
@@ -56,15 +57,12 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
-    // Check whether an authenticated session exists.
     const {
       data: { session },
       error: sessionError,
     } = await supabase.auth.getSession();
 
     if (sessionError) {
-      console.error("Session error:", sessionError.message);
-
       return NextResponse.json(
         { error: "Unable to verify your session. Please try again." },
         { status: 401 }
@@ -73,7 +71,6 @@ export async function POST(request: Request) {
 
     let user = null;
 
-    // Verify the user only when a session exists.
     if (session) {
       const {
         data: { user: authenticatedUser },
@@ -81,8 +78,6 @@ export async function POST(request: Request) {
       } = await supabase.auth.getUser();
 
       if (authError || !authenticatedUser) {
-        console.error("Authentication error:", authError?.message);
-
         return NextResponse.json(
           { error: "Your session is invalid or expired. Please sign in again." },
           { status: 401 }
@@ -106,7 +101,6 @@ export async function POST(request: Request) {
     let error;
 
     if (user) {
-      // Only Buyer accounts can use authenticated booking.
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
@@ -131,7 +125,6 @@ export async function POST(request: Request) {
       data = result.data;
       error = result.error;
     } else {
-      // Guests use the guest booking RPC.
       const result = await supabase.rpc(
         "create_guest_test_drive_booking",
         rpcParams
@@ -150,10 +143,78 @@ export async function POST(request: Request) {
       );
     }
 
+    // The booking is saved. Now gather details for the confirmation email.
+    const booking = Array.isArray(data) ? data[0] : data;
+
+    try {
+      const { data: showroom } = await supabase
+        .from("showrooms")
+        .select("name")
+        .eq("id", showroomId)
+        .maybeSingle();
+
+      const { data: demoVehicle } = await supabase
+        .from("demo_vehicles")
+        .select("variant_id")
+        .eq("id", demoVehicleId)
+        .maybeSingle();
+
+      let vehicleName = "Your selected vehicle";
+
+      if (demoVehicle?.variant_id) {
+        const { data: variant } = await supabase
+          .from("car_variants")
+          .select("variant_name, model_id")
+          .eq("id", demoVehicle.variant_id)
+          .maybeSingle();
+
+        if (variant) {
+          let modelName = "";
+
+          if (variant.model_id) {
+            const { data: model } = await supabase
+              .from("car_models")
+              .select("name")
+              .eq("id", variant.model_id)
+              .maybeSingle();
+
+            modelName = model?.name ?? "";
+          }
+
+          vehicleName = [modelName, variant.variant_name]
+            .filter(Boolean)
+            .join(" ");
+        }
+      }
+
+      const emailResult = await sendTestDriveBookingEmail({
+        buyerName: buyerName.trim(),
+        email: email.trim().toLowerCase(),
+        vehicleName,
+        showroomName: showroom?.name ?? "Selected showroom",
+        scheduledAt: parsedDate.toISOString(),
+        bookingId: String(
+          booking?.booking_id ?? booking?.id ?? "Pending"
+        ),
+      });
+
+      if (emailResult.error) {
+        console.error(
+          "Booking saved, but confirmation email failed:",
+          emailResult.error
+        );
+      } else {
+        console.log("Test-drive confirmation email accepted by Resend.");
+      }
+    } catch (emailError) {
+      // Never undo a successfully created booking because of email failure.
+      console.error("Booking saved, but email notification failed:", emailError);
+    }
+
     return NextResponse.json(
       {
         message: "Test drive booked successfully!",
-        booking: data?.[0],
+        booking,
       },
       { status: 201 }
     );

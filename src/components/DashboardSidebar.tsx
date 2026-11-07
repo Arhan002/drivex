@@ -13,7 +13,7 @@ const baseNavigation = [
   { label: "Follow-ups", href: "/dashboard/follow-ups", icon: "◷" },
   { label: "New Cars", href: "/cars?from=dashboard", icon: "🚘" },
   { label: "Used Cars", href: "/used-cars?from=dashboard", icon: "🚙" },
-  { label: "Test Drives", href: "/book-test-drive?from=dashboard", icon: "▣" },
+  { label: "Test Drives", href: "/dashboard/test-drives", icon: "▣" },
 ];
 
 export default function DashboardSidebar({
@@ -63,16 +63,26 @@ export default function DashboardSidebar({
   
 
   const navigation =
-    role === "admin"
-      ? [
-          ...baseNavigation,
-          {
-            label: "Consultants",
-            href: "/dashboard/consultants",
-            icon: "👥",
-          },
-        ]
-      : baseNavigation;
+  role === "admin"
+    ? [
+        ...baseNavigation,
+        {
+          label: "Inventory Management",
+          href: "/dashboard/inventory",
+          icon: "🚗",
+        },
+        {
+          label: "Consultants",
+          href: "/dashboard/consultants",
+          icon: "👥",
+        },
+        {
+          label: "Used Car Management",
+          href: "/dashboard/used-inventory",
+          icon: "🚙",
+        },
+      ]
+    : baseNavigation;
 
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === href;

@@ -3,7 +3,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
 const statuses = [
   { value: "pending", label: "Pending" },
@@ -31,17 +30,19 @@ export default function BookingStatusControl({
     setIsError(false);
 
     try {
-      const supabase = createClient();
+      const response = await fetch(`/api/bookings/${bookingId}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      });
 
-      const { error } = await supabase.rpc(
-        "update_test_drive_booking_status",
-        {
-          p_booking_id: bookingId,
-          p_status: status,
-        }
-      );
+      const result = await response.json();
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to update booking status.");
+      }
 
       setMessage("Booking status updated successfully!");
       router.refresh();

@@ -58,7 +58,7 @@ function TopNav({ backHref, from }: { backHref: string; from: string }) {
           </Link>
 
           <Link
-            href="/"
+            href={backHref}
             className="text-2xl font-extrabold tracking-tight text-neutral-950"
           >
             DRIVE<span className="text-orange-500">X.</span>
@@ -540,7 +540,7 @@ const backHref =
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-5 sm:flex-row sm:items-center">
 
           <Link
-            href="/"
+            href={backHref}
             className="text-2xl font-extrabold tracking-tight"
           >
             DRIVE<span className="text-orange-500">X.</span>
@@ -551,7 +551,7 @@ const backHref =
           </p>
 
           <Link
-            href="/"
+            href={backHref}
             className="text-sm font-semibold text-neutral-400 transition hover:text-orange-500"
           >
             Back to home ↑

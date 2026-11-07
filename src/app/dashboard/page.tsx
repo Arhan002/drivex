@@ -236,7 +236,7 @@ export default async function DashboardPage() {
     {
       title: "Book Test Drive",
       description: "Open the booking experience",
-      href: "/book-test-drive?from=dashboard",
+      href: "/dashboard/test-drives",
       icon: "▣",
     },
   ];
