@@ -17,6 +17,7 @@ export async function POST(request: Request) {
       consentGiven,
     } = body;
 
+    // Validate required fields
     if (
       !buyerName?.trim() ||
       !email?.trim() ||
@@ -27,11 +28,15 @@ export async function POST(request: Request) {
       consentGiven !== true
     ) {
       return NextResponse.json(
-        { error: "Please complete all required fields and provide consent." },
+        {
+          error:
+            "Please complete all required fields and provide consent.",
+        },
         { status: 400 }
       );
     }
 
+    // Validate email
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       return NextResponse.json(
         { error: "Please enter a valid email address." },
@@ -39,6 +44,7 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate phone
     if (!/^\d{10}$/.test(phone.trim())) {
       return NextResponse.json(
         { error: "Please enter a valid 10-digit phone number." },
@@ -46,6 +52,7 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate booking date
     const parsedDate = new Date(scheduledAt);
 
     if (Number.isNaN(parsedDate.getTime())) {
@@ -57,6 +64,7 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
+    // Check authentication session
     const {
       data: { session },
       error: sessionError,
@@ -79,7 +87,10 @@ export async function POST(request: Request) {
 
       if (authError || !authenticatedUser) {
         return NextResponse.json(
-          { error: "Your session is invalid or expired. Please sign in again." },
+          {
+            error:
+              "Your session is invalid or expired. Please sign in again.",
+          },
           { status: 401 }
         );
       }
@@ -87,6 +98,7 @@ export async function POST(request: Request) {
       user = authenticatedUser;
     }
 
+    // Prepare booking RPC parameters
     const rpcParams = {
       p_buyer_name: buyerName.trim(),
       p_email: email.trim().toLowerCase(),
@@ -100,6 +112,7 @@ export async function POST(request: Request) {
     let data;
     let error;
 
+    // Buyer booking or guest booking
     if (user) {
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
@@ -112,7 +125,10 @@ export async function POST(request: Request) {
         profile?.role?.trim().toLowerCase() !== "buyer"
       ) {
         return NextResponse.json(
-          { error: "Only Buyer accounts can book test drives here." },
+          {
+            error:
+              "Only Buyer accounts can book test drives here.",
+          },
           { status: 403 }
         );
       }
@@ -134,18 +150,23 @@ export async function POST(request: Request) {
       error = result.error;
     }
 
+    // Handle booking failure
     if (error) {
       console.error("Test drive booking error:", error.message);
 
       return NextResponse.json(
-        { error: error.message || "Unable to book your test drive." },
+        {
+          error:
+            error.message || "Unable to book your test drive.",
+        },
         { status: 400 }
       );
     }
 
-    // The booking is saved. Now gather details for the confirmation email.
+    // Booking is saved successfully
     const booking = Array.isArray(data) ? data[0] : data;
 
+    // Send booking email without affecting the saved booking
     try {
       const { data: showroom } = await supabase
         .from("showrooms")
@@ -187,7 +208,7 @@ export async function POST(request: Request) {
         }
       }
 
-      const emailResult = await sendTestDriveBookingEmail({
+      await sendTestDriveBookingEmail({
         buyerName: buyerName.trim(),
         email: email.trim().toLowerCase(),
         vehicleName,
@@ -198,17 +219,15 @@ export async function POST(request: Request) {
         ),
       });
 
-      if (emailResult.error) {
-        console.error(
-          "Booking saved, but confirmation email failed:",
-          emailResult.error
-        );
-      } else {
-        console.log("Test-drive confirmation email accepted by Resend.");
-      }
+      console.log(
+        "Test-drive booking email accepted by Gmail SMTP."
+      );
     } catch (emailError) {
       // Never undo a successfully created booking because of email failure.
-      console.error("Booking saved, but email notification failed:", emailError);
+      console.error(
+        "Booking saved, but email notification failed:",
+        emailError
+      );
     }
 
     return NextResponse.json(

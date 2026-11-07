@@ -1,5 +1,5 @@
 
-import { resend } from "@/lib/resend";
+import { sendEmail } from "@/lib/mailer";
 
 type BookingEmailDetails = {
   buyerName: string;
@@ -47,9 +47,8 @@ function bookingDetailsHtml(details: BookingEmailDetails) {
 export async function sendTestDriveBookingEmail(
   details: BookingEmailDetails
 ) {
-  return resend.emails.send({
-    from: "DriveX <onboarding@resend.dev>",
-    to: ["arhanlogan958@gmail.com"],
+  return sendEmail({
+    to: details.email,
     subject: "Your DriveX Test Drive Booking is Received!",
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:30px;color:#222;">
@@ -68,9 +67,8 @@ export async function sendTestDriveBookingEmail(
 export async function sendTestDriveConfirmedEmail(
   details: BookingEmailDetails
 ) {
-  return resend.emails.send({
-    from: "DriveX <onboarding@resend.dev>",
-    to: ["arhanlogan958@gmail.com"],
+  return sendEmail({
+    to: details.email,
     subject: "Your DriveX Test Drive is Confirmed!",
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:30px;color:#222;">

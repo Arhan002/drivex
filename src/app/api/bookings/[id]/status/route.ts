@@ -20,6 +20,7 @@ export async function PATCH(
 
     const supabase = await createClient();
 
+    // Verify authenticated user
     const {
       data: { user },
       error: authError,
@@ -32,6 +33,7 @@ export async function PATCH(
       );
     }
 
+    // Verify staff role
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("role")
@@ -40,17 +42,22 @@ export async function PATCH(
 
     const role = profile?.role?.trim().toLowerCase();
 
-    if (profileError || !["admin", "consultant"].includes(role ?? "")) {
+    if (
+      profileError ||
+      !["admin", "consultant"].includes(role ?? "")
+    ) {
       return NextResponse.json(
         { error: "You are not authorized to update bookings." },
         { status: 403 }
       );
     }
 
-    // Fetch existing booking details before changing its status.
+    // Fetch existing booking details
     const { data: booking, error: bookingError } = await supabase
       .from("test_drive_bookings")
-      .select("id, status, scheduled_at, lead_id, showroom_id, demo_vehicle_id")
+      .select(
+        "id, status, scheduled_at, lead_id, showroom_id, demo_vehicle_id"
+      )
       .eq("id", bookingId)
       .maybeSingle();
 
@@ -61,7 +68,7 @@ export async function PATCH(
       );
     }
 
-    // Existing database RPC enforces Admin/Consultant permissions.
+    // Update booking status through the existing RPC
     const { error: updateError } = await supabase.rpc(
       "update_test_drive_booking_status",
       {
@@ -74,12 +81,15 @@ export async function PATCH(
       console.error("Booking status update error:", updateError);
 
       return NextResponse.json(
-        { error: updateError.message || "Unable to update booking." },
+        {
+          error:
+            updateError.message || "Unable to update booking.",
+        },
         { status: 400 }
       );
     }
 
-    // Send an email only when the booking changes to confirmed.
+    // Send confirmation email only when status changes to confirmed
     if (status === "confirmed" && booking.status !== "confirmed") {
       try {
         const { data: lead } = await supabase
@@ -129,7 +139,7 @@ export async function PATCH(
         }
 
         if (lead?.email) {
-          const emailResult = await sendTestDriveConfirmedEmail({
+          await sendTestDriveConfirmedEmail({
             buyerName: lead.buyer_name ?? "Customer",
             email: lead.email,
             vehicleName,
@@ -138,17 +148,20 @@ export async function PATCH(
             bookingId: booking.id,
           });
 
-          if (emailResult.error) {
-            console.error("Confirmation email failed:", emailResult.error);
-          } else {
-            console.log("Booking confirmation email accepted by Resend.");
-          }
+          console.log(
+            "Test-drive confirmation email accepted by Gmail SMTP."
+          );
         } else {
-          console.error("Confirmation email skipped: customer email not found.");
+          console.error(
+            "Confirmation email skipped: customer email not found."
+          );
         }
       } catch (emailError) {
-        // A notification failure must not undo a successful status update.
-        console.error("Booking updated, but confirmation email failed:", emailError);
+        // Email failure must never undo a successful booking update.
+        console.error(
+          "Booking updated, but confirmation email failed:",
+          emailError
+        );
       }
     }
 
