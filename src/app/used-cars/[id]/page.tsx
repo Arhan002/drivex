@@ -97,6 +97,38 @@ export default async function UsedCarDetailsPage({
 
   const showrooms = showroomData ?? [];
 
+  // Load the signed-in user's contact details for the enquiry form.
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    console.error("User lookup error:", userError.message);
+  }
+
+  let buyerDetails = null;
+  let userRole: string | null = null;
+
+  if (user) {
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("full_name, phone, role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error("Buyer profile query error:", profileError.message);
+    } else {
+      buyerDetails = {
+        fullName: profile?.full_name ?? user.user_metadata?.full_name ?? "",
+        email: user.email ?? "",
+        phone: profile?.phone ?? user.user_metadata?.phone ?? "",
+      };
+      userRole = profile?.role ?? null;
+    }
+  }
+
   const specifications = [
     {
       label: "Manufacturing year",
@@ -361,6 +393,8 @@ export default async function UsedCarDetailsPage({
     <EnquiryForm
       source="used_car"
       showrooms={showrooms}
+      buyerDetails={buyerDetails}
+      userRole={userRole}
     />
 
     <div className="mt-8 text-center">
