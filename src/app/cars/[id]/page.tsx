@@ -1,7 +1,8 @@
+
 import Link from "next/link";
+import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import EnquiryForm from "@/components/EnquiryForm";
-import { connection } from "next/server";
 import {
   ArrowLeft,
   ArrowRight,
@@ -14,7 +15,6 @@ import {
   Sparkles,
 } from "lucide-react";
 
-
 export const instant = false;
 
 type Showroom = {
@@ -23,27 +23,33 @@ type Showroom = {
   city: string;
 };
 
+type CarPrice = {
+  city: string;
+  ex_showroom_price: number;
+  road_tax: number;
+  insurance: number;
+  accessories: number;
+  valid_until: string;
+};
+
+type CarVariant = {
+  id: string;
+  variant_name: string;
+  fuel_type: string;
+  transmission: string;
+  car_prices?: CarPrice[];
+};
+
 type CarDetail = {
   id: string;
   name: string;
   description: string | null;
   body_type: string | null;
   image_url: string | null;
-  car_variants?: {
-    id: string;
-    variant_name: string;
-    fuel_type: string;
-    transmission: string;
-    car_prices?: {
-      city: string;
-      ex_showroom_price: number;
-      road_tax: number;
-      insurance: number;
-      accessories: number;
-      valid_until: string;
-    }[];
-  }[];
+  car_variants?: CarVariant[];
 };
+
+const CITY = "Lucknow";
 
 const money = (amount: number) =>
   new Intl.NumberFormat("en-IN", {
@@ -52,7 +58,20 @@ const money = (amount: number) =>
     maximumFractionDigits: 0,
   }).format(amount);
 
-// Shared focus ring for keyboard users
+const getOnRoadTotal = (price: CarPrice) =>
+  Number(price.ex_showroom_price) +
+  Number(price.road_tax) +
+  Number(price.insurance) +
+  Number(price.accessories);
+
+const getToday = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500";
 
@@ -70,7 +89,13 @@ function TopNav({ from }: { from: string }) {
           </Link>
 
           <Link
-            href="/"
+            href={
+              from === "buyer"
+                ? "/buyer/dashboard"
+                : from === "dashboard"
+                  ? "/dashboard"
+                  : "/"
+            }
             className={`text-2xl font-extrabold tracking-tight text-neutral-950 ${focusRing}`}
           >
             DRIVE<span className="text-orange-500">X.</span>
@@ -84,12 +109,14 @@ function TopNav({ from }: { from: string }) {
           >
             New cars
           </Link>
+
           <Link
             href={`/used-cars?from=${from}`}
             className={`rounded-full px-4 py-2 text-neutral-600 transition hover:text-neutral-950 ${focusRing}`}
           >
             Used cars
           </Link>
+
           <Link
             href={`/book-test-drive?from=${from}`}
             className={`rounded-full px-4 py-2 text-neutral-600 transition hover:text-neutral-950 ${focusRing}`}
@@ -129,47 +156,58 @@ export default async function CarDetailPage({
       : source === "dashboard"
         ? "dashboard"
         : "home";
+
+  const today = getToday();
   const supabase = await createClient();
-  // Get the currently authenticated user
-const {
-  data: { user },
-} = await supabase.auth.getUser();
 
-// Fetch the buyer's profile details and role
-let userRole: string | null = null;
-let buyerDetails: {
-  fullName: string;
-  email: string;
-  phone: string;
-} | null = null;
+  // Authenticated user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-if (user) {
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("full_name, phone, role")
-    .eq("id", user.id)
-    .maybeSingle();
+  let userRole: string | null = null;
 
-  if (profileError) {
-    console.error("Profile query error:", profileError.message);
-  } else {
-    userRole = profile?.role ?? null;
+  let buyerDetails: {
+    fullName: string;
+    email: string;
+    phone: string;
+  } | null = null;
 
-    buyerDetails = {
-      fullName: profile?.full_name ?? user.user_metadata?.full_name ?? "",
-      email: user.email ?? "",
-      phone: profile?.phone ?? user.user_metadata?.phone ?? "",
-    };
+  if (user) {
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("full_name, phone, role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error("Profile query error:", profileError.message);
+    } else {
+      userRole = profile?.role ?? null;
+
+      buyerDetails = {
+        fullName:
+          profile?.full_name ??
+          user.user_metadata?.full_name ??
+          "",
+        email: user.email ?? "",
+        phone:
+          profile?.phone ??
+          user.user_metadata?.phone ??
+          "",
+      };
+    }
   }
-}
 
-// Guests can submit enquiries.
-// Authenticated users must have the buyer role.
-const normalizedRole = userRole?.trim().toLowerCase();
+  // Guests can submit enquiries.
+  // Admins and consultants cannot submit buyer enquiries.
+  const normalizedRole = userRole?.trim().toLowerCase();
 
-const canSubmitEnquiry =
-  !user || !["admin", "consultant"].includes(normalizedRole ?? "");
-  // Fetch car details
+  const canSubmitEnquiry =
+    !user ||
+    !["admin", "consultant"].includes(normalizedRole ?? "");
+
+  // Fetch car details and pricing records
   const { data, error } = await supabase
     .from("car_models")
     .select(`
@@ -198,7 +236,7 @@ const canSubmitEnquiry =
     .maybeSingle();
 
   if (error) {
-    console.error("Car detail query error:", error);
+    console.error("Car detail query error:", error.message);
     throw new Error("Unable to load car details.");
   }
 
@@ -215,7 +253,7 @@ const canSubmitEnquiry =
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-neutral-500">
-            We couldn&apos;t find the vehicle you were looking for. It may have
+            We couldn't find the vehicle you were looking for. It may have
             been removed or is no longer available.
           </p>
 
@@ -244,43 +282,44 @@ const canSubmitEnquiry =
   }
 
   const showrooms: Showroom[] = showroomData ?? [];
+
+  // Fetch active models for the enquiry form
   const { data: modelData, error: modelError } = await supabase
-  .from("car_models")
-  .select("id, name")
-  .eq("is_active", true)
-  .order("name");
+    .from("car_models")
+    .select("id, name")
+    .eq("is_active", true)
+    .order("name");
 
-if (modelError) {
-  console.error("Car models query error:", modelError.message);
-  throw new Error("Unable to load car models.");
-}
+  if (modelError) {
+    console.error("Car models query error:", modelError.message);
+    throw new Error("Unable to load car models.");
+  }
 
-const models = modelData ?? [];
-
+  const models = modelData ?? [];
   const car = data as unknown as CarDetail;
   const variants = car.car_variants ?? [];
 
-  // Calculate Lucknow prices
+  // Only valid Lucknow prices are shown.
   const prices = variants.flatMap((variant) =>
     (variant.car_prices ?? [])
-      .filter((price) => price.city.toLowerCase() === "lucknow")
+      .filter(
+        (price) =>
+          price.city.trim().toLowerCase() === CITY.toLowerCase() &&
+          price.valid_until >= today
+      )
       .map((price) => ({
+        variantId: variant.id,
         variantName: variant.variant_name,
+        fuelType: variant.fuel_type,
+        transmission: variant.transmission,
         ...price,
       }))
   );
 
+  // Starting price is the lowest valid on-road price.
   const startingPrice =
     prices.length > 0
-      ? Math.min(
-          ...prices.map(
-            (price) =>
-              Number(price.ex_showroom_price) +
-              Number(price.road_tax) +
-              Number(price.insurance) +
-              Number(price.accessories)
-          )
-        )
+      ? Math.min(...prices.map((price) => getOnRoadTotal(price)))
       : null;
 
   return (
@@ -334,7 +373,8 @@ const models = modelData ?? [];
             </p>
 
             <p className="mt-6 max-w-xl text-base leading-8 text-neutral-400 sm:text-lg">
-              {car.description || "Discover the DriveX vehicle collection."}
+              {car.description ||
+                "Discover the DriveX vehicle collection."}
             </p>
 
             <div className="mt-7 flex flex-wrap gap-2.5">
@@ -343,15 +383,17 @@ const models = modelData ?? [];
                   {car.body_type}
                 </span>
               )}
+
               <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-neutral-100 ring-1 ring-white/15">
-                {variants.length} {variants.length === 1 ? "variant" : "variants"}
+                {variants.length}{" "}
+                {variants.length === 1 ? "variant" : "variants"}
               </span>
             </div>
 
             {/* Starting price card */}
             <div className="mt-9 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-                Starting on-road price · Lucknow
+                Starting on-road price · {CITY}
               </p>
 
               <p className="mt-2 text-3xl font-extrabold text-orange-400 sm:text-4xl">
@@ -360,8 +402,10 @@ const models = modelData ?? [];
                   : "Price on request"}
               </p>
 
-              <p className="mt-2 text-xs text-neutral-500">
-                Based on available variant pricing.
+              <p className="mt-2 text-xs leading-5 text-neutral-500">
+                {startingPrice !== null
+                  ? "Based on the lowest available valid variant price."
+                  : "Contact our dealership for the latest pricing."}
               </p>
             </div>
 
@@ -383,9 +427,11 @@ const models = modelData ?? [];
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange-600">
               Find your configuration
             </p>
+
             <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-5xl">
               Explore <span className="text-orange-500">variants.</span>
             </h2>
+
             <p className="mt-3 max-w-md text-sm leading-7 text-neutral-500">
               Compare fuel options and transmissions before you choose.
             </p>
@@ -393,7 +439,8 @@ const models = modelData ?? [];
 
           <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-neutral-700 shadow-sm ring-1 ring-neutral-200">
             <CarFront size={17} className="text-orange-500" />
-            {variants.length} {variants.length === 1 ? "variant" : "variants"}
+            {variants.length}{" "}
+            {variants.length === 1 ? "variant" : "variants"}
           </span>
         </div>
 
@@ -410,19 +457,15 @@ const models = modelData ?? [];
             }
           >
             {variants.map((variant, index) => {
-              const variantPrices = (variant.car_prices ?? []).filter(
-                (price) => price.city.toLowerCase() === "lucknow"
+              const variantPrices = prices.filter(
+                (price) => price.variantId === variant.id
               );
 
               const lowestPrice =
                 variantPrices.length > 0
                   ? Math.min(
-                      ...variantPrices.map(
-                        (price) =>
-                          Number(price.ex_showroom_price) +
-                          Number(price.road_tax) +
-                          Number(price.insurance) +
-                          Number(price.accessories)
+                      ...variantPrices.map((price) =>
+                        getOnRoadTotal(price)
                       )
                     )
                   : null;
@@ -437,7 +480,11 @@ const models = modelData ?? [];
                   }`}
                   style={{ animationDelay: `${index * 120}ms` }}
                 >
-                  <div className={variants.length === 1 ? "flex-1" : ""}>
+                  <div
+                    className={
+                      variants.length === 1 ? "flex-1" : ""
+                    }
+                  >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 transition duration-300 group-hover:bg-orange-500 group-hover:text-white">
                         <CarFront size={26} />
@@ -477,7 +524,7 @@ const models = modelData ?? [];
                     }`}
                   >
                     <p className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                      Lucknow on-road price
+                      {CITY} on-road price
                     </p>
 
                     <p className="mt-2 text-2xl font-extrabold text-neutral-950 sm:text-3xl">
@@ -487,7 +534,9 @@ const models = modelData ?? [];
                     </p>
 
                     <p className="mt-2 text-xs text-neutral-500">
-                      Transparent pricing with a complete cost breakdown.
+                      {lowestPrice !== null
+                        ? "Includes applicable listed price components."
+                        : "Contact the dealership for pricing."}
                     </p>
                   </div>
                 </article>
@@ -497,7 +546,6 @@ const models = modelData ?? [];
         )}
       </section>
 
-      
       {/* ON-ROAD PRICING */}
       <section
         id="pricing"
@@ -516,7 +564,7 @@ const models = modelData ?? [];
 
               <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-500">
                 See the estimated on-road price for each available variant in
-                Lucknow, broken down line by line.
+                {` ${CITY} `}, broken down line by line.
               </p>
             </div>
 
@@ -528,27 +576,35 @@ const models = modelData ?? [];
 
           {prices.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-neutral-300 bg-[#f7f7f5] p-10 text-center text-neutral-500">
-              Pricing is currently available on request.
+              Pricing is currently unavailable. Please contact the dealership.
             </div>
           ) : (
             <div className="space-y-6">
               {prices.map((price, index) => {
-                const total =
-                  Number(price.ex_showroom_price) +
-                  Number(price.road_tax) +
-                  Number(price.insurance) +
-                  Number(price.accessories);
+                const total = getOnRoadTotal(price);
 
                 const lines = [
-                  { label: "Ex-showroom price", value: price.ex_showroom_price },
-                  { label: "Road tax", value: price.road_tax },
-                  { label: "Insurance", value: price.insurance },
-                  { label: "Accessories", value: price.accessories },
+                  {
+                    label: "Ex-showroom price",
+                    value: price.ex_showroom_price,
+                  },
+                  {
+                    label: "Road tax",
+                    value: price.road_tax,
+                  },
+                  {
+                    label: "Insurance",
+                    value: price.insurance,
+                  },
+                  {
+                    label: "Accessories",
+                    value: price.accessories,
+                  },
                 ];
 
                 return (
                   <article
-                    key={`${price.variantName}-${index}`}
+                    key={`${price.variantId}-${index}`}
                     className="stagger-item grid gap-8 rounded-3xl border border-neutral-200/80 bg-[#f7f7f5] p-6 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-xl motion-reduce:transition-none sm:p-8 lg:grid-cols-[1.3fr_0.9fr] lg:items-stretch lg:gap-12"
                     style={{ animationDelay: `${index * 120}ms` }}
                   >
@@ -575,7 +631,10 @@ const models = modelData ?? [];
                             key={line.label}
                             className="flex items-center justify-between gap-4 py-4"
                           >
-                            <dt className="text-neutral-500">{line.label}</dt>
+                            <dt className="text-neutral-500">
+                              {line.label}
+                            </dt>
+
                             <dd className="font-bold text-neutral-900">
                               {money(Number(line.value))}
                             </dd>
@@ -599,13 +658,20 @@ const models = modelData ?? [];
 
                       <div className="mt-8 border-t border-white/10 pt-5">
                         <p className="text-sm leading-6 text-neutral-400">
-                          Complete price breakdown for Lucknow. No hidden
-                          charges in this estimate.
+                          Complete price breakdown for {CITY}.
+                        </p>
+
+                        <p className="mt-4 text-xs font-semibold text-neutral-300">
+                          Price valid until: {price.valid_until}
                         </p>
 
                         <p className="mt-4 text-xs leading-5 text-neutral-500">
-                          Price valid until {price.valid_until}. Prices are
-                          illustrative and subject to confirmation.
+                          Disclaimer: This is an indicative on-road estimate
+                          based on the pricing components maintained by the
+                          dealership. Final payable amounts may vary based on
+                          RTO charges, insurer terms and selected accessories.
+                          Please confirm the final quotation with the
+                          dealership before purchase.
                         </p>
                       </div>
                     </div>
@@ -617,46 +683,52 @@ const models = modelData ?? [];
         </div>
       </section>
 
+      {/* CUSTOMER ENQUIRY */}
+      {canSubmitEnquiry && (
+        <section className="px-4 py-16 sm:px-8 lg:py-24">
+          <div className="mx-auto max-w-7xl">
+            <div className="mb-8 overflow-hidden rounded-[2rem] bg-[#090909] px-6 py-10 text-white sm:px-12 sm:py-14">
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange-500">
+                Your next step
+              </p>
 
-     {/* CUSTOMER ENQUIRY */}
-{canSubmitEnquiry && (
-  <section className="px-4 py-16 sm:px-8 lg:py-24">
-    <div className="mx-auto max-w-7xl">
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
+                Interested in {car.name}?
+              </h2>
 
-      <div className="mb-8 overflow-hidden rounded-[2rem] bg-[#090909] px-6 py-10 text-white sm:px-12 sm:py-14">
-        <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange-500">
-          Your next step
-        </p>
+              <p className="mt-4 max-w-xl text-sm leading-7 text-neutral-400">
+                Tell us what you're looking for and our dealership team will
+                help you with the next steps.
+              </p>
+            </div>
 
-        <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
-          Interested in {car.name}?
-        </h2>
-
-        <p className="mt-4 max-w-xl text-sm leading-7 text-neutral-400">
-          Tell us what you&apos;re looking for and our dealership team will
-          help you with the next steps.
-        </p>
-      </div>
-
-      <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-neutral-200/70 sm:p-8 lg:p-10">
-        <EnquiryForm
-          source="new_car"
-          modelId={car.id}
-          showrooms={showrooms}
-          models={models}
-          userRole={userRole}
-          buyerDetails={buyerDetails}
-        />
-      </div>
-
-    </div>
-  </section>
-)}
+            <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-neutral-200/70 sm:p-8 lg:p-10">
+              <EnquiryForm
+                source="new_car"
+                modelId={car.id}
+                showrooms={showrooms}
+                models={models}
+                userRole={userRole}
+                buyerDetails={buyerDetails}
+              />
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* FOOTER */}
       <footer className="border-t border-white/10 bg-[#090909] px-4 py-10 text-white sm:px-8">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-5 text-center sm:flex-row sm:text-left">
-          <Link href="/" className="text-2xl font-extrabold tracking-tight">
+          <Link
+            href={
+              from === "buyer"
+                ? "/buyer/dashboard"
+                : from === "dashboard"
+                  ? "/dashboard"
+                  : "/"
+            }
+            className="text-2xl font-extrabold tracking-tight"
+          >
             DRIVE<span className="text-orange-500">X.</span>
           </Link>
 

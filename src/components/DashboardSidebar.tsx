@@ -81,6 +81,11 @@ export default function DashboardSidebar({
           href: "/dashboard/used-inventory",
           icon: "🚙",
         },
+        {
+          label: "City-wise Pricing",
+          href: "/dashboard/prices",
+          icon: "₹",
+        },
       ]
     : baseNavigation;
 
