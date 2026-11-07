@@ -66,8 +66,18 @@ function StepHeader({
 function BookTestDriveContent() {
     const searchParams = useSearchParams();
   const source = searchParams.get("from");
-  const from = source === "dashboard" ? "dashboard" : "home";
-  const backHref = from === "dashboard" ? "/dashboard" : "/";
+  const from =
+    source === "buyer"
+      ? "buyer"
+      : source === "dashboard"
+        ? "dashboard"
+        : "home";
+  const backHref =
+    from === "buyer"
+      ? "/buyer/dashboard"
+      : from === "dashboard"
+        ? "/dashboard"
+        : "/";
   const [showrooms, setShowrooms] = useState<Showroom[]>([]);
   const [vehicles, setVehicles] = useState<DemoVehicle[]>([]);
 
@@ -202,7 +212,7 @@ function BookTestDriveContent() {
       <header className="border-b border-neutral-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
           <Link
-            href="/"
+            href={backHref}
             className="text-xl font-extrabold tracking-tight"
           >
             DRIVE<span className="text-orange-500">X.</span>
@@ -212,7 +222,7 @@ function BookTestDriveContent() {
   className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 transition hover:text-neutral-950"
 >
   <ArrowLeft size={16} />
-  {from === "dashboard" ? "Back to dashboard" : "Back to home"}
+  {from === "buyer" ? "Back to buyer dashboard" : from === "dashboard" ? "Back to dashboard" : "Back to home"}
 </Link>
         </div>
       </header>
@@ -427,7 +437,20 @@ function BookTestDriveContent() {
                   {isSuccess && (
                     <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
                   )}
-                  <span>{message}</span>
+                  <span>
+                    {message}
+                    {isSuccess && from === "buyer" && (
+                      <>
+                        {" "}
+                        <Link
+                          href="/buyer/dashboard"
+                          className="font-bold underline underline-offset-2"
+                        >
+                          View your dashboard
+                        </Link>
+                      </>
+                    )}
+                  </span>
                 </div>
               )}
             </div>

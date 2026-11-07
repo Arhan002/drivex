@@ -32,6 +32,7 @@ type EnquiryFormProps = {
   modelId?: string;
   showrooms: Showroom[];
   models?: CarModel[];
+  userRole?:string | null;
 };
 
 export default function EnquiryForm({
@@ -39,6 +40,7 @@ export default function EnquiryForm({
   modelId,
   showrooms,
   models=[],
+  userRole,
 }: EnquiryFormProps) {
   const [buyerName, setBuyerName] = useState("");
   const [email, setEmail] = useState("");
@@ -119,7 +121,10 @@ export default function EnquiryForm({
       setLoading(false);
     }
   }
-
+  // Hide enquiry form from dealership staff
+  if (userRole === "admin" || userRole === "consultant") {
+    return null;
+  }
   return (
     <section className="bg-[#f7f7f5] px-4 py-16 sm:px-8 lg:py-24">
       <div className="mx-auto max-w-7xl">

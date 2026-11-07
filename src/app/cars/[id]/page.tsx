@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
+
 export const instant = false;
 
 type Showroom = {
@@ -120,10 +121,43 @@ export default async function CarDetailPage({
   await connection();
 
   const { id } = await params;
-  const { from: source } = await searchParams;  
-  const from = source === "dashboard" ? "dashboard" : "home";
-  const supabase = await createClient();
+  const { from: source } = await searchParams;
 
+  const from =
+    source === "buyer"
+      ? "buyer"
+      : source === "dashboard"
+        ? "dashboard"
+        : "home";
+  const supabase = await createClient();
+  // Get the currently authenticated user
+const {
+  data: { user },
+} = await supabase.auth.getUser();
+
+// Fetch the user's role
+let userRole: string | null = null;
+
+if (user) {
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profileError) {
+    console.error("Profile role query error:", profileError.message);
+  } else {
+    userRole = profile?.role ?? null;
+  }
+}
+
+// Guests can submit enquiries.
+// Authenticated users must have the buyer role.
+const normalizedRole = userRole?.trim().toLowerCase();
+
+const canSubmitEnquiry =
+  !user || !["admin", "consultant"].includes(normalizedRole ?? "");
   // Fetch car details
   const { data, error } = await supabase
     .from("car_models")
@@ -573,32 +607,39 @@ const models = modelData ?? [];
       </section>
 
 
-      {/* CUSTOMER ENQUIRY */}
-      <section className="px-4 py-16 sm:px-8 lg:py-24">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-8 overflow-hidden rounded-[2rem] bg-[#090909] px-6 py-10 text-white sm:px-12 sm:py-14">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange-500">
-              Your next step
-            </p>
-            <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
-              Interested in {car.name}?
-            </h2>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-neutral-400">
-              Tell us what you&apos;re looking for and our dealership team will
-              help you with the next steps.
-            </p>
-          </div>
+     {/* CUSTOMER ENQUIRY */}
+{canSubmitEnquiry && (
+  <section className="px-4 py-16 sm:px-8 lg:py-24">
+    <div className="mx-auto max-w-7xl">
 
-          <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-neutral-200/70 sm:p-8 lg:p-10">
-            <EnquiryForm
-              source="new_car"
-              modelId={car.id}
-              showrooms={showrooms}
-              models={models}
-            />
-          </div>
-        </div>
-      </section>
+      <div className="mb-8 overflow-hidden rounded-[2rem] bg-[#090909] px-6 py-10 text-white sm:px-12 sm:py-14">
+        <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange-500">
+          Your next step
+        </p>
+
+        <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
+          Interested in {car.name}?
+        </h2>
+
+        <p className="mt-4 max-w-xl text-sm leading-7 text-neutral-400">
+          Tell us what you&apos;re looking for and our dealership team will
+          help you with the next steps.
+        </p>
+      </div>
+
+      <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-neutral-200/70 sm:p-8 lg:p-10">
+        <EnquiryForm
+          source="new_car"
+          modelId={car.id}
+          showrooms={showrooms}
+          models={models}
+          userRole={userRole}
+        />
+      </div>
+
+    </div>
+  </section>
+)}
 
       {/* FOOTER */}
       <footer className="border-t border-white/10 bg-[#090909] px-4 py-10 text-white sm:px-8">

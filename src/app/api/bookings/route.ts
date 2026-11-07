@@ -17,9 +17,9 @@ export async function POST(request: Request) {
     } = body;
 
     if (
-      !buyerName ||
-      !email ||
-      !phone ||
+      !buyerName?.trim() ||
+      !email?.trim() ||
+      !phone?.trim() ||
       !showroomId ||
       !demoVehicleId ||
       !scheduledAt ||
@@ -33,24 +33,70 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
-    const { data, error } = await supabase.rpc(
-      "create_guest_test_drive_booking",
-      {
-        p_buyer_name: buyerName,
-        p_email: email,
-        p_phone: phone,
-        p_showroom_id: showroomId,
-        p_demo_vehicle_id: demoVehicleId,
-        p_scheduled_at: scheduledAt,
-        p_consent_given: consentGiven,
+    // Identify whether this is an authenticated request.
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError) {
+      return NextResponse.json(
+        { error: "Unable to verify your session. Please sign in again." },
+        { status: 401 }
+      );
+    }
+
+    const rpcParams = {
+      p_buyer_name: buyerName.trim(),
+      p_email: email.trim().toLowerCase(),
+      p_phone: phone.trim(),
+      p_showroom_id: showroomId,
+      p_demo_vehicle_id: demoVehicleId,
+      p_scheduled_at: scheduledAt,
+      p_consent_given: consentGiven,
+    };
+
+    let data;
+    let error;
+
+    if (user) {
+      // Only Buyer accounts can use the authenticated booking flow.
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profileError || profile?.role?.trim().toLowerCase() !== "buyer") {
+        return NextResponse.json(
+          { error: "Only Buyer accounts can book test drives here." },
+          { status: 403 }
+        );
       }
-    );
+
+      const result = await supabase.rpc(
+        "create_buyer_test_drive_booking",
+        rpcParams
+      );
+
+      data = result.data;
+      error = result.error;
+    } else {
+      // Preserve the existing guest booking flow.
+      const result = await supabase.rpc(
+        "create_guest_test_drive_booking",
+        rpcParams
+      );
+
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) {
-      console.error("Booking error:", error.message);
+      console.error("Test drive booking error:", error.message);
 
       return NextResponse.json(
-        { error: error.message },
+        { error: error.message || "Unable to book your test drive." },
         { status: 400 }
       );
     }
@@ -63,7 +109,7 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("API error:", error);
+    console.error("Booking API error:", error);
 
     return NextResponse.json(
       { error: "Something went wrong. Please try again." },

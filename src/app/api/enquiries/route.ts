@@ -18,7 +18,6 @@ export async function POST(request: Request) {
       transmissionPreference,
       budget,
       purchaseTimeline,
-      selectedModelId,
     } = body;
 
     if (
@@ -56,26 +55,71 @@ export async function POST(request: Request) {
       );
     }
 
-    
-
     const supabase = await createClient();
 
-    const { data, error } = await supabase.rpc(
-  "create_guest_enquiry",
-  {
-    p_buyer_name: buyerName.trim(),
-    p_email: email.trim().toLowerCase(),
-    p_phone: phone.trim(),
-    p_showroom_id: showroomId,
-    p_model_id: modelId || null,
-    p_source: source,
-    p_consent_given: consentGiven,
-    p_fuel_preference: fuelPreference || null,
-    p_transmission_preference: transmissionPreference || null,
-    p_budget: budget || null,
-    p_purchase_timeline: purchaseTimeline || null,
-  }
-);
+    // Identify whether the request belongs to an authenticated user.
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError) {
+      return NextResponse.json(
+        { error: "Unable to verify your session. Please sign in again." },
+        { status: 401 }
+      );
+    }
+
+    const rpcParams = {
+      p_buyer_name: buyerName.trim(),
+      p_email: email.trim().toLowerCase(),
+      p_phone: phone.trim(),
+      p_showroom_id: showroomId,
+      p_model_id: modelId || null,
+      p_source: source,
+      p_consent_given: consentGiven,
+      p_fuel_preference: fuelPreference || null,
+      p_transmission_preference: transmissionPreference || null,
+      p_budget: budget || null,
+      p_purchase_timeline: purchaseTimeline || null,
+    };
+
+    let data;
+    let error;
+
+    if (user) {
+      // Authenticated users must have a Buyer profile.
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profileError || profile?.role?.trim().toLowerCase() !== "buyer") {
+        return NextResponse.json(
+          { error: "Only Buyer accounts can submit enquiries here." },
+          { status: 403 }
+        );
+      }
+
+      const result = await supabase.rpc("create_buyer_enquiry", rpcParams);
+      data = result.data;
+      error = result.error;
+    } else {
+      // Preserve the existing guest enquiry flow.
+      const result = await supabase.rpc("create_guest_enquiry", rpcParams);
+      data = result.data;
+      error = result.error;
+    }
+
+    if (error) {
+      console.error("Enquiry creation error:", error.message);
+
+      return NextResponse.json(
+        { error: error.message || "Unable to submit your enquiry." },
+        { status: 400 }
+      );
+    }
 
     return NextResponse.json(
       {

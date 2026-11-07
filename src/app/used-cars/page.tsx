@@ -61,7 +61,7 @@ function TopNav({
           </Link>
 
           <Link
-            href="/"
+            href={backHref}
             className="text-2xl font-extrabold tracking-tight text-neutral-950"
           >
             DRIVE<span className="text-orange-500">X.</span>
@@ -109,8 +109,18 @@ export default async function UsedCarsPage({
   searchParams: Promise<{ from?: string }>;
 }) {
   const { from: source } = await searchParams;
-  const from = source === "dashboard" ? "dashboard" : "home";
-  const backHref = from === "dashboard" ? "/dashboard" : "/";
+  const from =
+    source === "buyer"
+      ? "buyer"
+      : source === "dashboard"
+        ? "dashboard"
+        : "home";
+  const backHref =
+    from === "buyer"
+      ? "/buyer/dashboard"
+      : from === "dashboard"
+        ? "/dashboard"
+        : "/";
 
   const supabase = await createClient();
 
@@ -285,7 +295,7 @@ export default async function UsedCarsPage({
             </p>
 
             <Link
-              href="/"
+              href={backHref}
               className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-orange-600 transition hover:text-orange-700"
             >
               <ArrowLeft size={16} />
@@ -452,7 +462,7 @@ export default async function UsedCarsPage({
       <footer className="border-t border-white/10 bg-[#090909] px-5 py-9 text-white sm:px-8">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-5 sm:flex-row sm:items-center">
           <Link
-            href="/"
+            href={backHref}
             className="text-2xl font-extrabold tracking-tight"
           >
             DRIVE<span className="text-orange-500">X.</span>
@@ -463,10 +473,14 @@ export default async function UsedCarsPage({
           </p>
 
           <Link
-            href="/"
+            href={backHref}
             className="text-sm font-semibold text-neutral-400 transition hover:text-orange-500"
           >
-            Back to home ↑
+            {from === "buyer"
+              ? "Back to buyer dashboard ↑"
+              : from === "dashboard"
+                ? "Back to dashboard ↑"
+                : "Back to home ↑"}
           </Link>
         </div>
       </footer>

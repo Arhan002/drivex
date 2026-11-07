@@ -51,7 +51,18 @@ export default async function UsedCarDetailsPage({
 }) {
   const { id } = await params;
   const { from: source } = await searchParams;
-  const from = source === "dashboard" ? "dashboard" : "home";
+  const from =
+    source === "buyer"
+      ? "buyer"
+      : source === "dashboard"
+        ? "dashboard"
+        : "home";
+  const backHref =
+    from === "buyer"
+      ? "/buyer/dashboard"
+      : from === "dashboard"
+        ? "/dashboard"
+        : "/";
   const supabase = await createClient();
 
   const { data: car, error } = await supabase
@@ -135,7 +146,7 @@ export default async function UsedCarDetailsPage({
           </Link>
 
           <Link
-            href="/"
+            href={backHref}
             className="text-2xl font-extrabold tracking-tight text-neutral-950"
           >
             DRIVE<span className="text-orange-500">X.</span>
@@ -369,7 +380,7 @@ export default async function UsedCarDetailsPage({
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-5 sm:flex-row sm:items-center">
 
           <Link
-            href="/"
+            href={backHref}
             className="text-2xl font-extrabold tracking-tight"
           >
             DRIVE<span className="text-orange-500">X.</span>

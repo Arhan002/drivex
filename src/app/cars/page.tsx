@@ -95,9 +95,22 @@ export default async function CarsPage({
   searchParams: Promise<{ type?: string; from?: string }>;
 }) {
   await connection();
-  const { type, from: source } = await searchParams;
-  const from = source === "dashboard" ? "dashboard" : "home";
-  const backHref = from === "dashboard" ? "/dashboard" : "/";
+
+const { type, from: source } = await searchParams;
+
+const from =
+  source === "buyer"
+    ? "buyer"
+    : source === "dashboard"
+      ? "dashboard"
+      : "home";
+
+const backHref =
+  from === "buyer"
+    ? "/buyer/dashboard"
+    : from === "dashboard"
+      ? "/dashboard"
+      : "/";
   const supabase = await createClient();
 
   const { data: modelData, error } = await supabase
