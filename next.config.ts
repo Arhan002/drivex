@@ -1,9 +1,13 @@
+
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
+
+  // Allow access from your sister's laptop on the same Wi-Fi
+  allowedDevOrigins: ["192.168.1.2"],
+
   turbopack: {
     rules: {
       "*.css": {

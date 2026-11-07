@@ -179,6 +179,12 @@ const bookings = (bookingsResult.data ?? []) as unknown as Booking[];
 
           <div className="flex items-center gap-4">
             <Link
+              href="/book-test-drive?from=buyer"
+              className="hidden rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-700 sm:inline-flex"
+            >
+              Book a Test Drive
+            </Link>
+            <Link
               href="/cars?from=buyer"
               className="hidden text-sm font-medium text-gray-600 hover:text-orange-600 sm:block"
             >
@@ -313,18 +319,30 @@ const bookings = (bookingsResult.data ?? []) as unknown as Booking[];
 
           {bookings.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center">
-              <p className="text-lg font-semibold text-gray-800">
-                No test drives booked
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-orange-50">
+                <span className="text-2xl" aria-hidden="true">🚗</span>
+              </div>
+              <p className="mt-4 text-lg font-semibold text-gray-900">
+                No test drives booked yet
               </p>
-              <p className="mt-2 text-sm text-gray-500">
-                Book a test drive to see your appointment details here.
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-500">
+                Ready to experience your favourite car? Schedule a test drive
+                and track your appointment details right here.
               </p>
-              <Link
-                href="/"
-                className="mt-5 inline-block rounded-lg bg-orange-600 px-5 py-3 text-sm font-semibold text-white hover:bg-orange-700"
-              >
-                Browse Vehicles
-              </Link>
+              <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+                <Link
+                  href="/book-test-drive?from=buyer"
+                  className="inline-flex items-center justify-center rounded-lg bg-orange-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-orange-700"
+                >
+                  + Book a Test Drive
+                </Link>
+                <Link
+                  href="/cars?from=buyer"
+                  className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-700 transition hover:border-orange-500 hover:text-orange-600"
+                >
+                  Browse Vehicles
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">

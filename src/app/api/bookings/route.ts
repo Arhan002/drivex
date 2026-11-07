@@ -31,19 +31,65 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return NextResponse.json(
+        { error: "Please enter a valid email address." },
+        { status: 400 }
+      );
+    }
+
+    if (!/^\d{10}$/.test(phone.trim())) {
+      return NextResponse.json(
+        { error: "Please enter a valid 10-digit phone number." },
+        { status: 400 }
+      );
+    }
+
+    const parsedDate = new Date(scheduledAt);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return NextResponse.json(
+        { error: "Please select a valid booking date and time." },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
 
-    // Identify whether this is an authenticated request.
+    // Check whether an authenticated session exists.
     const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
 
-    if (authError) {
+    if (sessionError) {
+      console.error("Session error:", sessionError.message);
+
       return NextResponse.json(
-        { error: "Unable to verify your session. Please sign in again." },
+        { error: "Unable to verify your session. Please try again." },
         { status: 401 }
       );
+    }
+
+    let user = null;
+
+    // Verify the user only when a session exists.
+    if (session) {
+      const {
+        data: { user: authenticatedUser },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !authenticatedUser) {
+        console.error("Authentication error:", authError?.message);
+
+        return NextResponse.json(
+          { error: "Your session is invalid or expired. Please sign in again." },
+          { status: 401 }
+        );
+      }
+
+      user = authenticatedUser;
     }
 
     const rpcParams = {
@@ -52,7 +98,7 @@ export async function POST(request: Request) {
       p_phone: phone.trim(),
       p_showroom_id: showroomId,
       p_demo_vehicle_id: demoVehicleId,
-      p_scheduled_at: scheduledAt,
+      p_scheduled_at: parsedDate.toISOString(),
       p_consent_given: consentGiven,
     };
 
@@ -60,14 +106,17 @@ export async function POST(request: Request) {
     let error;
 
     if (user) {
-      // Only Buyer accounts can use the authenticated booking flow.
+      // Only Buyer accounts can use authenticated booking.
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (profileError || profile?.role?.trim().toLowerCase() !== "buyer") {
+      if (
+        profileError ||
+        profile?.role?.trim().toLowerCase() !== "buyer"
+      ) {
         return NextResponse.json(
           { error: "Only Buyer accounts can book test drives here." },
           { status: 403 }
@@ -82,7 +131,7 @@ export async function POST(request: Request) {
       data = result.data;
       error = result.error;
     } else {
-      // Preserve the existing guest booking flow.
+      // Guests use the guest booking RPC.
       const result = await supabase.rpc(
         "create_guest_test_drive_booking",
         rpcParams

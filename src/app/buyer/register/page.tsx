@@ -34,6 +34,7 @@ export default function BuyerRegisterPage() {
 
     try {
       const supabase = createClient();
+      console.log("Buyer signup redirect URL:", window.location.origin + "/buyer/confirm");
 
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),

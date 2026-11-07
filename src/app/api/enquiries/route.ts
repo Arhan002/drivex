@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       return NextResponse.json(
         { error: "Please enter a valid email address." },
         { status: 400 }
@@ -57,17 +57,40 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
-    // Identify whether the request belongs to an authenticated user.
+    // Check whether a session exists.
     const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
 
-    if (authError) {
+    if (sessionError) {
+      console.error("Session error:", sessionError.message);
+
       return NextResponse.json(
-        { error: "Unable to verify your session. Please sign in again." },
+        { error: "Unable to verify your session. Please try again." },
         { status: 401 }
       );
+    }
+
+    let user = null;
+
+    // Only verify the user when a session exists.
+    if (session) {
+      const {
+        data: { user: authenticatedUser },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !authenticatedUser) {
+        console.error("Authentication error:", authError?.message);
+
+        return NextResponse.json(
+          { error: "Your session is invalid or expired. Please sign in again." },
+          { status: 401 }
+        );
+      }
+
+      user = authenticatedUser;
     }
 
     const rpcParams = {
@@ -95,19 +118,30 @@ export async function POST(request: Request) {
         .eq("id", user.id)
         .maybeSingle();
 
-      if (profileError || profile?.role?.trim().toLowerCase() !== "buyer") {
+      if (
+        profileError ||
+        profile?.role?.trim().toLowerCase() !== "buyer"
+      ) {
         return NextResponse.json(
           { error: "Only Buyer accounts can submit enquiries here." },
           { status: 403 }
         );
       }
 
-      const result = await supabase.rpc("create_buyer_enquiry", rpcParams);
+      const result = await supabase.rpc(
+        "create_buyer_enquiry",
+        rpcParams
+      );
+
       data = result.data;
       error = result.error;
     } else {
-      // Preserve the existing guest enquiry flow.
-      const result = await supabase.rpc("create_guest_enquiry", rpcParams);
+      // Guest submission: no authenticated session.
+      const result = await supabase.rpc(
+        "create_guest_enquiry",
+        rpcParams
+      );
+
       data = result.data;
       error = result.error;
     }

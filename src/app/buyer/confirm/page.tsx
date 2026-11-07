@@ -28,11 +28,12 @@ export default function BuyerConfirmPage() {
         if (code) {
           const result = await supabase.auth.exchangeCodeForSession(code);
           verificationError = result.error;
-        } else if (tokenHash && type === "email") {
-          const result = await supabase.auth.verifyOtp({
-            token_hash: tokenHash,
-            type: "email",
-          });
+        } else if (tokenHash && type === "signup") {
+  const result = await supabase.auth.verifyOtp({
+    token_hash: tokenHash,
+    type: "signup",
+  });
+  verificationError = result.error;
           verificationError = result.error;
         } else {
           verificationError = new Error("Confirmation link is invalid or expired.");

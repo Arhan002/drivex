@@ -1,7 +1,7 @@
-
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -24,7 +24,6 @@ export default function LoginPage() {
     try {
       const supabase = createClient();
 
-      // Step 1: Authenticate user
       const { data, error: authError } =
         await supabase.auth.signInWithPassword({
           email: email.trim(),
@@ -39,7 +38,6 @@ export default function LoginPage() {
         throw new Error("Authentication failed. Please try again.");
       }
 
-      // Step 2: Fetch user profile and role
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role, full_name")
@@ -53,7 +51,6 @@ export default function LoginPage() {
         );
       }
 
-      // Step 3: Verify staff role
       if (!["consultant", "admin"].includes(profile.role)) {
         await supabase.auth.signOut();
         throw new Error(
@@ -61,12 +58,10 @@ export default function LoginPage() {
         );
       }
 
-      // Step 4: Redirect
       setSuccess(`Welcome, ${profile.full_name || "DriveX staff"}!`);
 
       router.replace("/dashboard");
       router.refresh();
-
     } catch (err) {
       console.error("Login error:", err);
 
@@ -83,7 +78,6 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#f8f8f6] px-5 py-12">
       <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-lg">
-
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900">
             Drive<span className="text-orange-600">X</span>
@@ -94,16 +88,13 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <h2 className="text-2xl font-bold text-gray-900">
-          Welcome back
-        </h2>
+        <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
 
         <p className="mt-2 text-sm text-gray-600">
           Sign in to manage your customer enquiries.
         </p>
 
         <form onSubmit={handleLogin} className="mt-7 space-y-5">
-
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">
               Email address
@@ -112,6 +103,7 @@ export default function LoginPage() {
             <input
               required
               type="email"
+              autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your work email"
@@ -127,15 +119,25 @@ export default function LoginPage() {
             <input
               required
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               className="w-full rounded-lg border border-gray-300 bg-white p-3 text-gray-900 placeholder:text-gray-500 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
             />
+
+            <div className="mt-2 text-right">
+              <Link
+                href="/forgot-password"
+                className="text-sm font-medium text-orange-600 hover:text-orange-700"
+              >
+                Forgot password?
+              </Link>
+            </div>
           </div>
 
           {error && (
-            <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+            <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
               {error}
             </p>
           )}
@@ -153,7 +155,6 @@ export default function LoginPage() {
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>
-
         </form>
 
         <p className="mt-6 text-center text-xs text-gray-500">
