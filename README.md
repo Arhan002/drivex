@@ -245,7 +245,7 @@ npm run build
 
 ## Project documentation
 
-- [Beginner-friendly setup and deployment guide](DriveX_DEPLOYMENT.md)
+- [Beginner-friendly setup and deployment guide](DEPLOYMENT.md)
 - [GitHub repository](https://github.com/Arhan002/drivex)
 
 The Technical Design Document is provided separately as part of the project submission.
