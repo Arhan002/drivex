@@ -382,11 +382,11 @@ function BookTestDriveContent() {
                 disabled={!showroomId}
                 className={inputClass}
               >
-                <option value="">
-                  {showroomId
-                    ? "{t.selectVehicle}"
-                    : "{t.pickShowroom}"}
-                </option>
+              <option value="">
+        {showroomId
+          ? t.selectVehicle
+          : t.pickShowroom}
+      </option>
                 {filteredVehicles.map((vehicle) => (
                   <option key={vehicle.id} value={vehicle.id}>
                     {vehicle.car_variants?.car_models?.name ?? t.car} –{" "}
