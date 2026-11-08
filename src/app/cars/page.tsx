@@ -1,6 +1,9 @@
 
 import Link from "next/link";
 import { connection } from "next/server";
+import { cookies } from "next/headers";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import type { Language } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
 import {
   ArrowRight,
@@ -54,6 +57,54 @@ const getOnRoadTotal = (price: CarPrice) =>
   Number(price.insurance) +
   Number(price.accessories);
 
+
+const catalogueCopy = {
+  en: {
+    back: "Back", newCars: "New Cars", usedCars: "Used Cars", testDrives: "Test Drives",
+    book: "Book a test drive", unable: "Unable to load cars", tryAgain: "Please try again later.",
+    return: "Return", collection: "Explore the DriveX collection", location: "Lucknow, Uttar Pradesh",
+    heroFirst: "Find your", heroSecond: "perfect", heroAccent: "drive.",
+    heroDescription: "Discover the DriveX range. Compare features, explore variants and find the right car for your journey.",
+    exploreAvailable: "Explore available cars", exploreDriveX: "Explore DriveX", ourCollection: "Our Collection",
+    availableModels: "Available models", bodyTypes: "Body types", collectionLabel: "THE DRIVEX COLLECTION",
+    exploreModels: "Explore our", models: "models.",
+    collectionDescription: "Discover the perfect combination of design, comfort and performance.",
+    modelAvailable: "Model available", modelsAvailable: "Models available", browseCategory: "Browse by category",
+    allVehicles: "All vehicles", noCars: "No cars available", noMatches: "No models match this filter.",
+    checkBack: "Please check back soon.", clearFilter: "Clear filter", imageSoon: "Image coming soon",
+    cardLabel: "DRIVEX COLLECTION", discoverModel: "Discover this DriveX model.",
+    startingPrice: "Starting on-road price · Lucknow", priceRequest: "Price on request",
+    priceIncludes: "Includes ex-showroom price, road tax, insurance and accessories.",
+    contactPricing: "Contact our dealership for the latest pricing.", variants: "Available variants",
+    details: "Details", testDrive: "Test drive", footer: "© 2026 DriveX. Demonstration dealership platform.",
+    backTop: "Back", suv: "SUV", sedan: "Sedan", hatchback: "Hatchback",
+    petrol: "Petrol", diesel: "Diesel", electric: "Electric", cng: "CNG",
+    automatic: "Automatic", manual: "Manual",
+  },
+  hi: {
+    back: "वापस", newCars: "नई कारें", usedCars: "पुरानी कारें", testDrives: "टेस्ट ड्राइव",
+    book: "टेस्ट ड्राइव बुक करें", unable: "कारें लोड नहीं हो सकीं", tryAgain: "कृपया थोड़ी देर बाद फिर कोशिश करें।",
+    return: "वापस जाएँ", collection: "DriveX की कारों का संग्रह देखें", location: "लखनऊ, उत्तर प्रदेश",
+    heroFirst: "अपनी पसंद की", heroSecond: "बेहतरीन", heroAccent: "कार खोजें।",
+    heroDescription: "DriveX की कारें देखें, खूबियों और वेरिएंट की तुलना करें और अपने सफर के लिए सही कार चुनें।",
+    exploreAvailable: "उपलब्ध कारें देखें", exploreDriveX: "DriveX देखें", ourCollection: "हमारा संग्रह",
+    availableModels: "उपलब्ध मॉडल", bodyTypes: "कार की श्रेणियाँ", collectionLabel: "DRIVEX का कार संग्रह",
+    exploreModels: "हमारे", models: "मॉडल देखें।",
+    collectionDescription: "डिज़ाइन, आराम और प्रदर्शन का बेहतरीन मेल खोजें।",
+    modelAvailable: "मॉडल उपलब्ध", modelsAvailable: "मॉडल उपलब्ध", browseCategory: "श्रेणी के अनुसार देखें",
+    allVehicles: "सभी कारें", noCars: "कोई कार उपलब्ध नहीं है", noMatches: "इस फ़िल्टर से मेल खाने वाला कोई मॉडल नहीं मिला।",
+    checkBack: "कृपया जल्द दोबारा देखें।", clearFilter: "फ़िल्टर हटाएँ", imageSoon: "तस्वीर जल्द उपलब्ध होगी",
+    cardLabel: "DRIVEX कार संग्रह", discoverModel: "DriveX के इस मॉडल के बारे में जानें।",
+    startingPrice: "शुरुआती ऑन-रोड कीमत · लखनऊ", priceRequest: "कीमत के लिए संपर्क करें",
+    priceIncludes: "इसमें एक्स-शोरूम कीमत, रोड टैक्स, बीमा और अतिरिक्त सुविधाएँ शामिल हैं।",
+    contactPricing: "नई कीमत जानने के लिए हमारे डीलरशिप से संपर्क करें।", variants: "उपलब्ध वेरिएंट",
+    details: "जानकारी", testDrive: "टेस्ट ड्राइव", footer: "© 2026 DriveX. डेमो डीलरशिप प्लेटफ़ॉर्म।",
+    backTop: "वापस", suv: "एसयूवी", sedan: "सेडान", hatchback: "हैचबैक",
+    petrol: "पेट्रोल", diesel: "डीज़ल", electric: "इलेक्ट्रिक", cng: "सीएनजी",
+    automatic: "ऑटोमैटिक", manual: "मैनुअल",
+  },
+} as const;
+
 // Uses the server's local calendar date.
 const getToday = () => {
   const date = new Date();
@@ -66,9 +117,13 @@ const getToday = () => {
 function TopNav({
   backHref,
   from,
+  language,
+  copy,
 }: {
   backHref: string;
   from: string;
+  language: Language;
+  copy: (typeof catalogueCopy)[Language];
 }) {
   return (
     <header className="sticky top-0 z-30 border-b border-neutral-200/70 bg-white/90 backdrop-blur-xl">
@@ -79,7 +134,7 @@ function TopNav({
             className="flex items-center gap-2 rounded-lg text-sm font-semibold text-neutral-500 transition hover:text-orange-600"
           >
             <ArrowLeft size={17} />
-            <span className="hidden sm:inline">Back</span>
+            <span className="hidden sm:inline">{copy.back}</span>
           </Link>
 
           <Link
@@ -95,31 +150,36 @@ function TopNav({
             href={`/cars?from=${from}`}
             className="font-bold text-orange-600"
           >
-            New Cars
+            {copy.newCars}
           </Link>
 
           <Link
             href={`/used-cars?from=${from}`}
             className="transition hover:text-orange-600"
           >
-            Used Cars
+            {copy.usedCars}
           </Link>
 
           <Link
             href={`/book-test-drive?from=${from}`}
             className="transition hover:text-orange-600"
           >
-            Test Drives
+            {copy.testDrives}
           </Link>
         </nav>
 
-        <Link
-          href={`/book-test-drive?from=${from}`}
-          className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-5 py-3 text-xs font-bold text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-orange-400 hover:shadow-lg sm:text-sm"
-        >
-          Book a test drive
-          <ArrowRight size={16} />
-        </Link>
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:block">
+            <LanguageSwitcher language={language} />
+          </div>
+          <Link
+            href={`/book-test-drive?from=${from}`}
+            className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-5 py-3 text-xs font-bold text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-orange-400 hover:shadow-lg sm:text-sm"
+          >
+            {copy.book}
+            <ArrowRight size={16} />
+          </Link>
+        </div>
       </div>
     </header>
   );
@@ -131,6 +191,32 @@ export default async function CarsPage({
   searchParams: Promise<{ type?: string; from?: string }>;
 }) {
   await connection();
+
+  const cookieStore = await cookies();
+  const language: Language =
+    cookieStore.get("drivex-language")?.value === "hi" ? "hi" : "en";
+  const copy = catalogueCopy[language];
+
+  const translateBodyType = (value: string) => {
+    if (language !== "hi") return value;
+    const key = value.toLowerCase();
+    if (key === "suv") return copy.suv;
+    if (key === "sedan") return copy.sedan;
+    if (key === "hatchback") return copy.hatchback;
+    return value;
+  };
+
+  const translateSpec = (value: string) => {
+    if (language !== "hi") return value;
+    const key = value.toLowerCase();
+    if (key === "petrol") return copy.petrol;
+    if (key === "diesel") return copy.diesel;
+    if (key === "electric") return copy.electric;
+    if (key === "cng") return copy.cng;
+    if (key === "automatic") return copy.automatic;
+    if (key === "manual") return copy.manual;
+    return value;
+  };
 
   const { type, from: source } = await searchParams;
 
@@ -181,8 +267,8 @@ export default async function CarsPage({
     console.error("Cars query error:", error.message);
 
     return (
-      <main className="min-h-screen bg-[#f7f7f5]">
-        <TopNav backHref={backHref} from={from} />
+      <main className="min-h-screen bg-[#f7f7f5]" style={language === "hi" ? { fontFamily: "var(--font-hindi), sans-serif" } : undefined}>
+        <TopNav backHref={backHref} from={from} language={language} copy={copy} />
 
         <div className="mx-auto max-w-3xl px-6 py-28 text-center">
           <CarFront size={42} className="mx-auto text-orange-500" />
@@ -199,7 +285,7 @@ export default async function CarsPage({
             href={backHref}
             className="mt-7 inline-flex items-center gap-2 rounded-full bg-neutral-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-orange-500 hover:text-black"
           >
-            Return
+            {copy.return}
             <ArrowRight size={17} />
           </Link>
         </div>
@@ -225,8 +311,8 @@ export default async function CarsPage({
     : allCars;
 
   return (
-    <main className="min-h-screen bg-[#f7f7f5]">
-      <TopNav backHref={backHref} from={from} />
+    <main className="min-h-screen bg-[#f7f7f5]" style={language === "hi" ? { fontFamily: "var(--font-hindi), sans-serif" } : undefined}>
+      <TopNav backHref={backHref} from={from} language={language} copy={copy} />
 
       {/* PREMIUM HERO */}
       <section className="relative isolate overflow-hidden bg-[#090909] px-5 py-20 text-white sm:px-8 lg:py-28">
@@ -237,32 +323,31 @@ export default async function CarsPage({
         <div className="relative mx-auto max-w-7xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-300 backdrop-blur-md">
             <Sparkles size={14} className="text-orange-500" />
-            Explore the DriveX collection
+            {copy.collection}
           </div>
 
           <div className="mt-8 grid gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
             <div>
               <p className="flex items-center gap-2 text-sm text-neutral-400">
                 <MapPin size={16} className="text-orange-500" />
-                Lucknow, Uttar Pradesh
+                {copy.location}
               </p>
 
               <h1 className="mt-5 max-w-3xl text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
-                Find your
+                {copy.heroFirst}
                 <br />
-                perfect <span className="text-orange-500">drive.</span>
+                {copy.heroSecond} <span className="text-orange-500">{copy.heroAccent}</span>
               </h1>
 
               <p className="mt-7 max-w-xl text-base leading-8 text-neutral-400 sm:text-lg">
-                Discover the DriveX range. Compare features, explore
-                variants and find the right car for your journey.
+                {copy.heroDescription}
               </p>
 
               <Link
                 href="#available-cars"
                 className="mt-9 inline-flex items-center gap-3 rounded-full bg-orange-500 px-7 py-4 text-sm font-bold text-black transition-all duration-300 hover:-translate-y-1 hover:bg-orange-400 hover:shadow-[0_12px_35px_rgba(249,115,22,0.25)]"
               >
-                Explore available cars
+                {copy.exploreAvailable}
                 <ArrowRight size={18} />
               </Link>
             </div>
@@ -280,11 +365,11 @@ export default async function CarsPage({
 
               <div className="absolute inset-x-0 bottom-0 p-6 text-white">
                 <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange-400">
-                  Explore DriveX
+                  {copy.exploreDriveX}
                 </p>
 
                 <h2 className="mt-2 text-3xl font-extrabold">
-                  {allCars[0]?.name ?? "Our Collection"}
+                  {allCars[0]?.name ?? copy.ourCollection}
                 </h2>
 
                 <div className="mt-5 grid grid-cols-2 gap-3">
@@ -293,7 +378,7 @@ export default async function CarsPage({
                       {allCars.length.toString().padStart(2, "0")}
                     </p>
                     <p className="mt-1 text-xs text-neutral-300">
-                      Available models
+                      {copy.availableModels}
                     </p>
                   </div>
 
@@ -302,7 +387,7 @@ export default async function CarsPage({
                       {bodyTypes.length.toString().padStart(2, "0")}
                     </p>
                     <p className="mt-1 text-xs text-neutral-300">
-                      Body types
+                      {copy.bodyTypes}
                     </p>
                   </div>
                 </div>
@@ -321,15 +406,15 @@ export default async function CarsPage({
           <div>
             <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-orange-600">
               <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-              THE DRIVEX COLLECTION
+              {copy.collectionLabel}
             </p>
 
             <h2 className="text-3xl font-extrabold tracking-tight text-neutral-950 sm:text-4xl">
-              Explore our <span className="text-orange-500">models.</span>
+              {copy.exploreModels} <span className="text-orange-500">{copy.models}</span>
             </h2>
 
             <p className="mt-3 text-sm leading-6 text-neutral-500">
-              Discover the perfect combination of design, comfort and performance.
+              {copy.collectionDescription}
             </p>
           </div>
 
@@ -340,7 +425,7 @@ export default async function CarsPage({
                 {cars.length.toString().padStart(2, "0")}
               </p>
               <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
-                {cars.length === 1 ? "Model available" : "Models available"}
+                {cars.length === 1 ? copy.modelAvailable : copy.modelsAvailable}
               </p>
             </div>
           </div>
@@ -350,7 +435,7 @@ export default async function CarsPage({
         {bodyTypes.length > 0 && (
           <div className="mb-12 flex flex-wrap items-center gap-3">
             <span className="mr-2 text-xs font-bold uppercase tracking-[0.16em] text-neutral-400">
-              Browse by category
+              {copy.browseCategory}
             </span>
 
             <Link
@@ -362,7 +447,7 @@ export default async function CarsPage({
                   : "border-neutral-200 bg-white text-neutral-600 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700"
               }`}
             >
-              All vehicles
+              {copy.allVehicles}
             </Link>
 
             {bodyTypes.map((bodyType) => {
@@ -380,7 +465,7 @@ export default async function CarsPage({
                       : "border-neutral-200 bg-white text-neutral-600 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700"
                   }`}
                 >
-                  {bodyType}
+                  {translateBodyType(bodyType)}
                 </Link>
               );
             })}
@@ -393,13 +478,13 @@ export default async function CarsPage({
             <CarFront size={42} className="mx-auto text-orange-500" />
 
             <h3 className="mt-5 text-2xl font-bold text-neutral-950">
-              No cars available
+              {copy.noCars}
             </h3>
 
             <p className="mt-3 text-sm text-neutral-500">
               {type
-                ? "No models match this filter."
-                : "Please check back soon."}
+                ? copy.noMatches
+                : copy.checkBack}
             </p>
 
             {type && (
@@ -408,7 +493,7 @@ export default async function CarsPage({
                 className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-orange-600 hover:text-orange-700"
               >
                 <ArrowLeft size={16} />
-                Clear filter
+                {copy.clearFilter}
               </Link>
             )}
           </div>
@@ -464,7 +549,7 @@ export default async function CarsPage({
                       <div className="flex h-full items-center justify-center text-neutral-400">
                         <CarFront size={48} strokeWidth={1.2} />
                         <span className="ml-3 text-sm">
-                          Image coming soon
+                          {copy.imageSoon}
                         </span>
                       </div>
                     )}
@@ -473,7 +558,7 @@ export default async function CarsPage({
 
                     {car.body_type && (
                       <span className="absolute left-5 top-5 rounded-full bg-white px-4 py-2 text-xs font-bold text-neutral-900 shadow-sm">
-                        {car.body_type}
+                        {translateBodyType(car.body_type ?? '')}
                       </span>
                     )}
 
@@ -486,7 +571,7 @@ export default async function CarsPage({
                   <div className="flex flex-1 flex-col p-6 sm:p-7">
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-600">
-                        DRIVEX COLLECTION
+                        {copy.cardLabel}
                       </p>
 
                       <h3 className="mt-2 text-2xl font-extrabold tracking-tight text-neutral-950">
@@ -494,7 +579,7 @@ export default async function CarsPage({
                       </h3>
 
                       <p className="mt-2 min-h-[2.5rem] text-sm leading-6 text-neutral-500">
-                        {car.description || "Discover this DriveX model."}
+                        {car.description || copy.discoverModel}
                       </p>
                     </div>
 
@@ -502,7 +587,7 @@ export default async function CarsPage({
                     <div className="mt-5 flex flex-wrap gap-2">
                       {fuels.map((fuel) => (
                         <span
-                          key={fuel}
+                          key={translateSpec(fuel)}
                           className="inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700"
                         >
                           <Fuel size={14} />
@@ -512,7 +597,7 @@ export default async function CarsPage({
 
                       {transmissions.map((transmission) => (
                         <span
-                          key={transmission}
+                          key={translateSpec(transmission)}
                           className="inline-flex items-center gap-2 rounded-full bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-700"
                         >
                           <Settings2 size={14} />
@@ -524,26 +609,26 @@ export default async function CarsPage({
                     {/* ON-ROAD PRICE */}
                     <div className="mt-6 border-t border-neutral-100 pt-5">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-                        Starting on-road price · Lucknow
+                        {copy.startingPrice}
                       </p>
 
                       <p className="mt-2 text-2xl font-extrabold tracking-tight text-neutral-950">
                         {startingPrice !== null
                           ? formatPrice(startingPrice)
-                          : "Price on request"}
+                          : copy.priceRequest}
                       </p>
 
                       <p className="mt-2 text-xs leading-5 text-neutral-500">
                         {startingPrice !== null
-                          ? "Includes ex-showroom price, road tax, insurance and accessories."
-                          : "Contact our dealership for the latest pricing."}
+                          ? copy.priceIncludes
+                          : copy.contactPricing}
                       </p>
                     </div>
 
                     {/* VARIANT SUMMARY */}
                     <div className="mt-5 flex items-center justify-between rounded-xl bg-neutral-50 px-4 py-3">
                       <span className="text-sm font-semibold text-neutral-700">
-                        Available variants
+                        {copy.variants}
                       </span>
 
                       <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-neutral-800 shadow-sm">
@@ -557,7 +642,7 @@ export default async function CarsPage({
                         href={`/cars/${car.id}?from=${from}`}
                         className="flex items-center justify-center gap-2 rounded-xl bg-neutral-950 px-3 py-3.5 text-sm font-bold text-white transition hover:bg-orange-500 hover:text-black"
                       >
-                        Details
+                        {copy.details}
                         <ChevronRight size={17} />
                       </Link>
 
@@ -565,7 +650,7 @@ export default async function CarsPage({
                         href={`/book-test-drive?from=${from}`}
                         className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 px-3 py-3.5 text-sm font-bold text-neutral-700 transition hover:border-orange-500 hover:bg-orange-50 hover:text-orange-700"
                       >
-                        Test drive
+                        {copy.testDrive}
                       </Link>
                     </div>
                   </div>
@@ -587,14 +672,14 @@ export default async function CarsPage({
           </Link>
 
           <p className="text-xs text-neutral-500">
-            © 2026 DriveX. Demonstration dealership platform.
+            {copy.footer}
           </p>
 
           <Link
             href={backHref}
             className="text-sm font-semibold text-neutral-400 transition hover:text-orange-500"
           >
-            Back ↑
+            {copy.backTop} ↑
           </Link>
         </div>
       </footer>

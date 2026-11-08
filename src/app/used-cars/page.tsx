@@ -1,5 +1,8 @@
 
 import Link from "next/link";
+import { cookies } from "next/headers";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import type { Language } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
 import {
   ArrowRight,
@@ -13,6 +16,43 @@ import {
 } from "lucide-react";
 
 export const instant = false;
+
+const pageCopy = {
+  en: {
+    back: "Back", newCars: "New Cars", usedCars: "Used Cars", testDrives: "Test Drives", book: "Book a test drive",
+    collection: "{t.collection}", location: "{t.location}",
+    heroFirst: "Pre-owned.", heroSecond: "Carefully chosen.",
+    heroDescription: "Find your next car and drive with confidence. Explore available vehicles with transparent pricing and important details shown upfront.",
+    exploreCars: "Explore available cars", imageUnavailable: "Image unavailable",
+    featuredFallback: "Pre-owned collection", exploreVehicles: "Explore available vehicles", availablePreowned: "Available pre-owned cars",
+    sectionEyebrow: "The DriveX pre-owned collection", sectionTitle: "Find your", sectionTitleAccent: "next car.",
+    sectionDescription: "Explore available vehicles with clear pricing, mileage and ownership information.",
+    vehicle: "Vehicle", vehicles: "Vehicles", loadError: "Unable to load used cars", tryLater: "Please try again later.",
+    noCars: "No cars available right now", checkBack: "Please check back soon for new arrivals.", returnHome: "Return home",
+    available: "Available", preOwned: "Pre-owned", viewDetailsAria: "View car details", driveXPreOwned: "DriveX pre-owned",
+    askingPrice: "Asking price", kilometres: "Kilometres", fuelType: "Fuel type", owners: "Owners", stockId: "Stock ID",
+    registration: "Registration", inspectionAvailable: "Inspection information available", viewVehicleDetails: "View vehicle details",
+    footer: "© 2026 DriveX. Demonstration dealership platform.",
+    backBuyer: "Back to buyer dashboard ↑", backDashboard: "Back to dashboard ↑", backHome: "Back to home ↑",
+  },
+  hi: {
+    back: "वापस", newCars: "नई कारें", usedCars: "पुरानी कारें", testDrives: "टेस्ट ड्राइव", book: "टेस्ट ड्राइव बुक करें",
+    collection: "DriveX की प्रमाणित पुरानी कारें", location: "लखनऊ, उत्तर प्रदेश",
+    heroFirst: "पुरानी कारें।", heroSecond: "ध्यान से चुनी गईं।",
+    heroDescription: "अपनी अगली कार चुनें और पूरे भरोसे के साथ ड्राइव करें। पारदर्शी कीमतों और ज़रूरी जानकारी के साथ उपलब्ध कारें देखें।",
+    exploreCars: "उपलब्ध कारें देखें", imageUnavailable: "तस्वीर उपलब्ध नहीं है",
+    featuredFallback: "पुरानी कारों का संग्रह", exploreVehicles: "उपलब्ध कारें देखें", availablePreowned: "उपलब्ध पुरानी कारें",
+    sectionEyebrow: "DriveX की पुरानी कारों का संग्रह", sectionTitle: "खोजें अपनी", sectionTitleAccent: "अगली कार।",
+    sectionDescription: "स्पष्ट कीमत, चली हुई दूरी और मालिकों की जानकारी के साथ उपलब्ध कारें देखें।",
+    vehicle: "कार", vehicles: "कारें", loadError: "पुरानी कारें लोड नहीं हो सकीं", tryLater: "कृपया थोड़ी देर बाद फिर कोशिश करें।",
+    noCars: "अभी कोई कार उपलब्ध नहीं है", checkBack: "नई कारों की जानकारी के लिए जल्द दोबारा देखें।", returnHome: "होम पेज पर जाएँ",
+    available: "उपलब्ध", preOwned: "पुरानी कार", viewDetailsAria: "कार की जानकारी देखें", driveXPreOwned: "DriveX पुरानी कारें",
+    askingPrice: "माँगी गई कीमत", kilometres: "चली हुई दूरी", fuelType: "ईंधन", owners: "मालिकों की संख्या", stockId: "स्टॉक आईडी",
+    registration: "रजिस्ट्रेशन", inspectionAvailable: "निरीक्षण की जानकारी उपलब्ध है", viewVehicleDetails: "कार की पूरी जानकारी देखें",
+    footer: "© 2026 DriveX. डेमो डीलरशिप प्लेटफ़ॉर्म।",
+    backBuyer: "खरीदार डैशबोर्ड पर वापस जाएँ ↑", backDashboard: "डैशबोर्ड पर वापस जाएँ ↑", backHome: "होम पेज पर वापस जाएँ ↑",
+  },
+} as const;
 
 type UsedCar = {
   id: string;
@@ -44,9 +84,13 @@ function formatKilometres(km: number) {
 function TopNav({
   backHref,
   from,
+  t,
+  language,
 }: {
   backHref: string;
   from: string;
+  t: (typeof pageCopy)[Language];
+  language: Language;
 }) {
   return (
     <header className="sticky top-0 z-30 border-b border-neutral-200/70 bg-white/90 backdrop-blur-xl">
@@ -57,7 +101,7 @@ function TopNav({
             className="flex items-center gap-2 text-sm font-semibold text-neutral-500 transition hover:text-orange-600"
           >
             <ArrowLeft size={17} />
-            <span className="hidden sm:inline">Back</span>
+            <span className="hidden sm:inline">{t.back}</span>
           </Link>
 
           <Link
@@ -73,31 +117,34 @@ function TopNav({
             href={`/cars?from=${from}`}
             className="transition hover:text-orange-600"
           >
-            New Cars
+            {t.newCars}
           </Link>
 
           <Link
             href={`/used-cars?from=${from}`}
             className="font-bold text-orange-600"
           >
-            Used Cars
+            {t.usedCars}
           </Link>
 
           <Link
             href={`/book-test-drive?from=${from}`}
             className="transition hover:text-orange-600"
           >
-            Test Drives
+            {t.testDrives}
           </Link>
         </nav>
 
+        <div className="flex items-center gap-3">
+        <LanguageSwitcher language={language} />
         <Link
           href={`/book-test-drive?from=${from}`}
           className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-5 py-3 text-xs font-bold text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-orange-400 hover:shadow-lg sm:text-sm"
         >
-          Book a test drive
+          {t.book}
           <ArrowRight size={16} />
         </Link>
+        </div>
       </div>
     </header>
   );
@@ -109,6 +156,9 @@ export default async function UsedCarsPage({
   searchParams: Promise<{ from?: string }>;
 }) {
   const { from: source } = await searchParams;
+  const cookieStore = await cookies();
+  const language: Language = cookieStore.get("drivex-language")?.value === "hi" ? "hi" : "en";
+  const t = pageCopy[language];
   const from =
     source === "buyer"
       ? "buyer"
@@ -138,8 +188,11 @@ export default async function UsedCarsPage({
   const featuredCar = usedCars.find((car) => car.image_url) ?? usedCars[0] ?? null;
 
   return (
-    <main className="min-h-screen bg-[#f7f7f5] text-neutral-950">
-      <TopNav backHref={backHref} from={from} />
+    <main
+      className="min-h-screen bg-[#f7f7f5] text-neutral-950"
+      style={language === "hi" ? { fontFamily: "var(--font-hindi), sans-serif" } : undefined}
+    >
+      <TopNav backHref={backHref} from={from} t={t} language={language} />
 
       {/* PREMIUM HERO */}
       <section className="relative isolate overflow-hidden bg-[#090909] px-5 py-20 text-white sm:px-8 lg:py-24">
@@ -163,24 +216,22 @@ export default async function UsedCarsPage({
               </p>
 
               <h1 className="mt-5 max-w-2xl text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
-                Pre-owned.
+                {t.heroFirst}
                 <br />
                 <span className="text-orange-500">
-                  Carefully chosen.
+                  {t.heroSecond}
                 </span>
               </h1>
 
               <p className="mt-7 max-w-xl text-base leading-8 text-neutral-400 sm:text-lg">
-                Find your next car and drive with confidence.
-                Explore available vehicles with transparent pricing
-                and important details shown upfront.
+                {t.heroDescription}
               </p>
 
               <Link
                 href="#available-cars"
                 className="mt-9 inline-flex items-center gap-3 rounded-full bg-orange-500 px-7 py-4 text-sm font-bold text-black transition-all duration-300 hover:-translate-y-1 hover:bg-orange-400 hover:shadow-[0_12px_35px_rgba(249,115,22,0.25)]"
               >
-                Explore available cars
+                {t.exploreCars}
                 <ArrowRight size={18} />
               </Link>
             </div>
@@ -201,7 +252,7 @@ export default async function UsedCarsPage({
                     className="text-neutral-600"
                   />
                   <span className="text-xs font-medium uppercase tracking-[0.2em] text-neutral-500">
-                    Image unavailable
+                    {t.imageUnavailable}
                   </span>
                 </div>
               )}
@@ -214,11 +265,11 @@ export default async function UsedCarsPage({
                 </p>
 
                 <h2 className="mt-2 text-3xl font-extrabold">
-                  {featuredCar?.model_name ?? "Pre-owned collection"}
+                  {featuredCar?.model_name ?? t.featuredFallback}
                 </h2>
 
                 <p className="mt-1 text-sm text-neutral-300">
-                  {featuredCar?.variant_name ?? "Explore available vehicles"}
+                  {featuredCar?.variant_name ?? t.exploreVehicles}
                 </p>
 
                 <div className="mt-5 rounded-xl border border-white/15 bg-white/10 p-4 backdrop-blur-md">
@@ -227,7 +278,7 @@ export default async function UsedCarsPage({
                   </p>
 
                   <p className="mt-1 text-xs text-neutral-300">
-                    Available pre-owned cars
+                    {t.availablePreowned}
                   </p>
                 </div>
               </div>
@@ -245,22 +296,21 @@ export default async function UsedCarsPage({
         <div className="mb-12 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-orange-600">
-              The DriveX pre-owned collection
+              {t.sectionEyebrow}
             </p>
 
             <h2 className="text-4xl font-extrabold tracking-tight text-neutral-950 sm:text-5xl">
-              Find your <span className="text-orange-500">next car.</span>
+              {t.sectionTitle} <span className="text-orange-500">{t.sectionTitleAccent}</span>
             </h2>
 
             <p className="mt-3 max-w-lg text-sm leading-7 text-neutral-500">
-              Explore available vehicles with clear pricing,
-              mileage and ownership information.
+              {t.sectionDescription}
             </p>
           </div>
 
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-neutral-200 bg-white px-5 py-3 text-sm font-semibold text-neutral-700 shadow-sm">
             <CarFront size={17} className="text-orange-500" />
-            {usedCars.length} {usedCars.length === 1 ? "Vehicle" : "Vehicles"}
+            {usedCars.length} {usedCars.length === 1 ? t.vehicle : t.vehicles}
           </div>
         </div>
 
@@ -271,11 +321,11 @@ export default async function UsedCarsPage({
             className="rounded-3xl border border-red-200 bg-red-50 p-8 text-center text-red-700"
           >
             <h3 className="text-xl font-bold">
-              Unable to load used cars
+              {t.loadError}
             </h3>
 
             <p className="mt-2 text-sm">
-              Please try again later.
+              {t.tryLater}
             </p>
           </div>
         ) : usedCars.length === 0 ? (
@@ -287,11 +337,11 @@ export default async function UsedCarsPage({
             />
 
             <h3 className="mt-5 text-2xl font-bold text-neutral-950">
-              No cars available right now
+              {t.noCars}
             </h3>
 
             <p className="mt-3 text-sm text-neutral-500">
-              Please check back soon for new arrivals.
+              {t.checkBack}
             </p>
 
             <Link
@@ -299,7 +349,7 @@ export default async function UsedCarsPage({
               className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-orange-600 transition hover:text-orange-700"
             >
               <ArrowLeft size={16} />
-              Return home
+              {t.returnHome}
             </Link>
           </div>
         ) : (
@@ -336,7 +386,7 @@ export default async function UsedCarsPage({
 
                   <Link
                     href={`/used-cars/${car.id}?from=${from}`}
-                    aria-label={`View ${car.model_name} details`}
+                    aria-label={`${t.viewDetailsAria}: ${car.model_name}`}
                     className="absolute bottom-4 left-4 flex h-10 w-10 items-center justify-center rounded-full bg-white text-neutral-950 opacity-0 shadow-lg transition-all duration-300 group-hover/car:translate-x-0 group-hover/car:opacity-100 hover:bg-orange-500"
                   >
                     <ArrowRight size={18} />
@@ -368,7 +418,7 @@ export default async function UsedCarsPage({
                   {/* PRICE */}
                   <div className="mt-6 border-t border-neutral-100 pt-5">
                     <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                      Asking price
+                      {t.askingPrice}
                     </p>
 
                     <p className="mt-2 text-2xl font-extrabold text-neutral-950">
@@ -381,7 +431,7 @@ export default async function UsedCarsPage({
                     <div>
                       <p className="flex items-center gap-2 text-xs text-neutral-400">
                         <Gauge size={14} className="text-orange-500" />
-                        Kilometres
+                        {t.kilometres}
                       </p>
 
                       <p className="mt-2 text-sm font-bold text-neutral-800">
@@ -392,7 +442,7 @@ export default async function UsedCarsPage({
                     <div>
                       <p className="flex items-center gap-2 text-xs text-neutral-400">
                         <Fuel size={14} className="text-orange-500" />
-                        Fuel type
+                        {t.fuelType}
                       </p>
 
                       <p className="mt-2 text-sm font-bold text-neutral-800">
@@ -403,7 +453,7 @@ export default async function UsedCarsPage({
                     <div>
                       <p className="flex items-center gap-2 text-xs text-neutral-400">
                         <CarFront size={14} className="text-orange-500" />
-                        Owners
+                        {t.owners}
                       </p>
 
                       <p className="mt-2 text-sm font-bold text-neutral-800">
@@ -414,7 +464,7 @@ export default async function UsedCarsPage({
                     <div>
                       <p className="flex items-center gap-2 text-xs text-neutral-400">
                         <ShieldCheck size={14} className="text-orange-500" />
-                        Stock ID
+                        {t.stockId}
                       </p>
 
                       <p className="mt-2 text-sm font-bold text-neutral-800">
@@ -444,7 +494,7 @@ export default async function UsedCarsPage({
                     href={`/used-cars/${car.id}?from=${from}`}
                     className="group/details mt-auto flex items-center justify-between rounded-xl bg-neutral-950 px-5 py-4 text-sm font-bold text-white transition-all duration-300 hover:bg-orange-500 hover:text-black hover:shadow-lg"
                   >
-                    <span>View vehicle details</span>
+                    <span>{t.viewVehicleDetails}</span>
 
                     <ChevronRight
                       size={19}
@@ -469,7 +519,7 @@ export default async function UsedCarsPage({
           </Link>
 
           <p className="text-xs text-neutral-500">
-            © 2026 DriveX. Demonstration dealership platform.
+            {t.footer}
           </p>
 
           <Link

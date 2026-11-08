@@ -1,6 +1,8 @@
 
 import Link from "next/link";
 import { connection } from "next/server";
+import { cookies } from "next/headers";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { createClient } from "@/lib/supabase/server";
 import EnquiryForm from "@/components/EnquiryForm";
 import {
@@ -49,6 +51,66 @@ type CarDetail = {
   car_variants?: CarVariant[];
 };
 
+
+const detailCopy = {
+  en: {
+    allCars: "All cars", newCars: "New cars", usedCars: "Used cars", testDrives: "Test drives",
+    book: "Book a test drive", mobileTestDrive: "Test drive", notFound: "Car not found",
+    notFoundText: "We couldn't find the vehicle you were looking for. It may have been removed or is no longer available.",
+    exploreAll: "Explore all cars", imageSoon: "Image coming soon", collection: "DriveX New Collection",
+    newCar: "New car", showrooms: "Showrooms in Lucknow, Uttar Pradesh",
+    description: "Discover the DriveX vehicle collection.", variant: "variant", variants: "variants",
+    startingPrice: "Starting on-road price", priceRequest: "Price on request",
+    lowestPrice: "Based on the lowest available valid variant price.",
+    contactPricing: "Contact our dealership for the latest pricing.", explorePricing: "Explore pricing",
+    findConfiguration: "Find your configuration", exploreVariants: "Explore variants.",
+    compare: "Compare fuel options and transmissions before you choose.",
+    variantUnavailable: "Variant information is currently unavailable.",
+    chooseConfiguration: "Choose your preferred configuration.", onRoadPrice: "on-road price",
+    includesComponents: "Includes applicable listed price components.",
+    contactDealership: "Contact the dealership for pricing.",
+    transparentPricing: "Transparent pricing", fullPrice: "Know the full",
+    price: "price.", estimatedPrice: "See the estimated on-road price for each available variant in", cityBreakdownSuffix: ", broken down line by line.",
+    breakdown: "Transparent breakdown", pricingUnavailable: "Pricing is currently unavailable. Please contact the dealership.",
+    variantPricing: "Variant pricing", estimatedOnRoad: "Your estimated on-road price",
+    completeBreakdown: "Complete price breakdown for", validUntil: "Price valid until:",
+    disclaimer: "{copy.disclaimer}",
+    exShowroom: "Ex-showroom price", roadTax: "Road tax", insurance: "Insurance", accessories: "Accessories",
+    nextStep: "Your next step", interested: "Interested in", interestedSuffix: "?",
+    enquiryText: "Tell us what you are looking for and our dealership team will help you with the next steps.",
+    footer: "© 2026 DriveX. Demonstration dealership platform.", backTop: "Back to top",
+  },
+  hi: {
+    allCars: "सभी कारें", newCars: "नई कारें", usedCars: "पुरानी कारें", testDrives: "टेस्ट ड्राइव",
+    book: "टेस्ट ड्राइव बुक करें", mobileTestDrive: "टेस्ट ड्राइव", notFound: "कार नहीं मिली",
+    notFoundText: "हमें आपकी चुनी हुई कार नहीं मिली। हो सकता है कि इसे हटा दिया गया हो या अब उपलब्ध न हो।",
+    exploreAll: "सभी कारें देखें", imageSoon: "तस्वीर जल्द उपलब्ध होगी", collection: "DriveX का नया कार संग्रह",
+    newCar: "नई कार", showrooms: "लखनऊ, उत्तर प्रदेश में शोरूम",
+    description: "DriveX की कारों का संग्रह देखें।", variant: "वेरिएंट", variants: "वेरिएंट",
+    startingPrice: "शुरुआती ऑन-रोड कीमत", priceRequest: "कीमत के लिए संपर्क करें",
+    lowestPrice: "सबसे कम उपलब्ध और मान्य वेरिएंट कीमत के आधार पर।",
+    contactPricing: "नई कीमत जानने के लिए हमारे डीलरशिप से संपर्क करें।", explorePricing: "कीमत देखें",
+    findConfiguration: "अपना पसंदीदा विकल्प चुनें", exploreVariants: "वेरिएंट देखें।",
+    compare: "चुनने से पहले ईंधन और ट्रांसमिशन विकल्पों की तुलना करें।",
+    variantUnavailable: "वेरिएंट की जानकारी अभी उपलब्ध नहीं है।",
+    chooseConfiguration: "अपना पसंदीदा कॉन्फ़िगरेशन चुनें।", onRoadPrice: "ऑन-रोड कीमत",
+    includesComponents: "इसमें सूचीबद्ध कीमत के लागू सभी घटक शामिल हैं।",
+    contactDealership: "कीमत जानने के लिए डीलरशिप से संपर्क करें।",
+    transparentPricing: "पारदर्शी कीमत", fullPrice: "पूरी",
+    price: "कीमत जानें।", estimatedPrice: "प्रत्येक उपलब्ध वेरिएंट की अनुमानित ऑन-रोड कीमत देखें", cityBreakdownSuffix: "की पूरी जानकारी नीचे देखें।",
+    breakdown: "कीमत का पूरा विवरण", pricingUnavailable: "कीमत की जानकारी अभी उपलब्ध नहीं है। कृपया डीलरशिप से संपर्क करें।",
+    variantPricing: "वेरिएंट की कीमत", estimatedOnRoad: "आपकी अनुमानित ऑन-रोड कीमत",
+    completeBreakdown: "के लिए कीमत का पूरा विवरण",
+    validUntil: "कीमत मान्य है:",
+    disclaimer: "अस्वीकरण: यह डीलरशिप द्वारा उपलब्ध कराए गए कीमत घटकों पर आधारित अनुमानित ऑन-रोड कीमत है। RTO शुल्क, बीमा शर्तों और चुनी गई अतिरिक्त सुविधाओं के अनुसार अंतिम राशि बदल सकती है। खरीदने से पहले डीलरशिप से अंतिम कोटेशन की पुष्टि करें।",
+    exShowroom: "एक्स-शोरूम कीमत", roadTax: "रोड टैक्स", insurance: "बीमा", accessories: "अतिरिक्त सुविधाएँ",
+    nextStep: "अगला कदम", interested: "क्या आप",
+    interestedSuffix: "में रुचि रखते हैं?",
+    enquiryText: "अपनी ज़रूरत बताएं। हमारी डीलरशिप टीम आगे की प्रक्रिया में आपकी मदद करेगी।",
+    footer: "© 2026 DriveX. डेमो डीलरशिप प्लेटफ़ॉर्म।", backTop: "ऊपर जाएँ",
+  },
+} as const;
+
 const CITY = "Lucknow";
 
 const money = (amount: number) =>
@@ -75,7 +137,15 @@ const getToday = () => {
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500";
 
-function TopNav({ from }: { from: string }) {
+function TopNav({
+  from,
+  language,
+  copy,
+}: {
+  from: string;
+  language: "en" | "hi";
+  copy: (typeof detailCopy)["en"] | (typeof detailCopy)["hi"];
+}) {
   return (
     <header className="sticky top-0 z-30 border-b border-neutral-200/70 bg-white/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:h-[76px] sm:px-8">
@@ -85,7 +155,7 @@ function TopNav({ from }: { from: string }) {
             className={`flex items-center gap-2 rounded-full px-2 py-1.5 text-sm font-semibold text-neutral-500 transition hover:text-orange-600 ${focusRing}`}
           >
             <ArrowLeft size={17} />
-            <span className="hidden sm:inline">All cars</span>
+            <span className="hidden sm:inline">{copy.allCars}</span>
           </Link>
 
           <Link
@@ -125,14 +195,17 @@ function TopNav({ from }: { from: string }) {
           </Link>
         </nav>
 
-        <Link
-          href={`/book-test-drive?from=${from}`}
-          className={`inline-flex shrink-0 items-center gap-2 rounded-full bg-orange-500 px-4 py-2.5 text-xs font-bold text-neutral-950 shadow-lg shadow-orange-500/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-orange-400 sm:px-5 sm:py-3 sm:text-sm ${focusRing}`}
-        >
-          <span className="hidden sm:inline">Book a test drive</span>
-          <span className="sm:hidden">Test drive</span>
-          <ArrowRight size={16} />
-        </Link>
+        <div className="flex shrink-0 items-center gap-3">
+          <LanguageSwitcher language={language} />
+          <Link
+            href={`/book-test-drive?from=${from}`}
+            className={`inline-flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2.5 text-xs font-bold text-neutral-950 shadow-lg shadow-orange-500/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-orange-400 sm:px-5 sm:py-3 sm:text-sm ${focusRing}`}
+          >
+            <span className="hidden sm:inline">{copy.book}</span>
+            <span className="sm:hidden">{copy.mobileTestDrive}</span>
+            <ArrowRight size={16} />
+          </Link>
+        </div>
       </div>
     </header>
   );
@@ -146,6 +219,31 @@ export default async function CarDetailPage({
   searchParams: Promise<{ from?: string }>;
 }) {
   await connection();
+
+  const cookieStore = await cookies();
+  const language: "en" | "hi" =
+    cookieStore.get("drivex-language")?.value === "hi" ? "hi" : "en";
+  const copy = detailCopy[language];
+
+  const translateBodyType = (value: string) => {
+    if (language !== "hi") return value;
+    const key = value.toLowerCase();
+    if (key === "suv") return "एसयूवी";
+    if (key === "sedan") return "सेडान";
+    if (key === "hatchback") return "हैचबैक";
+    return value;
+  };
+  const translateSpec = (value: string) => {
+    if (language !== "hi") return value;
+    const key = value.toLowerCase();
+    if (key === "petrol") return "पेट्रोल";
+    if (key === "diesel") return "डीज़ल";
+    if (key === "electric") return "इलेक्ट्रिक";
+    if (key === "cng") return "सीएनजी";
+    if (key === "automatic") return "ऑटोमैटिक";
+    if (key === "manual") return "मैनुअल";
+    return value;
+  };
 
   const { id } = await params;
   const { from: source } = await searchParams;
@@ -253,8 +351,7 @@ export default async function CarDetailPage({
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-neutral-500">
-            We couldn't find the vehicle you were looking for. It may have
-            been removed or is no longer available.
+{copy.notFoundText}
           </p>
 
           <Link
@@ -323,8 +420,8 @@ export default async function CarDetailPage({
       : null;
 
   return (
-    <main className="min-h-screen bg-[#f7f7f5] text-neutral-950">
-      <TopNav from={from} />
+    <main className="min-h-screen bg-[#f7f7f5] text-neutral-950" style={language === "hi" ? { fontFamily: "var(--font-hindi), sans-serif" } : undefined}>
+      <TopNav from={from} language={language} copy={copy} />
 
       {/* VEHICLE HERO */}
       <section className="relative isolate overflow-hidden bg-[#090909] text-white">
@@ -343,7 +440,7 @@ export default async function CarDetailPage({
             ) : (
               <div className="flex aspect-[4/3] flex-col items-center justify-center gap-3 text-neutral-500">
                 <CarFront size={60} strokeWidth={1.2} />
-                <span className="text-sm">Image coming soon</span>
+                <span className="text-sm">{copy.imageSoon}</span>
               </div>
             )}
 
@@ -351,7 +448,7 @@ export default async function CarDetailPage({
 
             <div className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/50 px-4 py-2 text-xs font-semibold text-white backdrop-blur-md sm:bottom-5 sm:left-5">
               <Sparkles size={14} className="text-orange-400" />
-              DriveX New Collection
+              {copy.collection}
             </div>
           </div>
 
@@ -369,43 +466,43 @@ export default async function CarDetailPage({
 
             <p className="mt-3 flex items-center gap-2 text-sm text-neutral-400">
               <MapPin size={16} className="text-orange-500" />
-              Showrooms in Lucknow, Uttar Pradesh
+              {copy.showrooms}
             </p>
 
             <p className="mt-6 max-w-xl text-base leading-8 text-neutral-400 sm:text-lg">
               {car.description ||
-                "Discover the DriveX vehicle collection."}
+                copy.description}
             </p>
 
             <div className="mt-7 flex flex-wrap gap-2.5">
               {car.body_type && (
                 <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-neutral-100 ring-1 ring-white/15">
-                  {car.body_type}
+                  {car.body_type ? translateBodyType(car.body_type) : ""}
                 </span>
               )}
 
               <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-neutral-100 ring-1 ring-white/15">
                 {variants.length}{" "}
-                {variants.length === 1 ? "variant" : "variants"}
+                {variants.length === 1 ? copy.variant : copy.variants}
               </span>
             </div>
 
             {/* Starting price card */}
             <div className="mt-9 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-                Starting on-road price · {CITY}
+                {copy.startingPrice} · {CITY}
               </p>
 
               <p className="mt-2 text-3xl font-extrabold text-orange-400 sm:text-4xl">
                 {startingPrice !== null
                   ? money(startingPrice)
-                  : "Price on request"}
+                  : copy.priceRequest}
               </p>
 
               <p className="mt-2 text-xs leading-5 text-neutral-500">
                 {startingPrice !== null
-                  ? "Based on the lowest available valid variant price."
-                  : "Contact our dealership for the latest pricing."}
+                  ? copy.lowestPrice
+                  : copy.contactPricing}
               </p>
             </div>
 
@@ -413,7 +510,7 @@ export default async function CarDetailPage({
               href="#pricing"
               className={`mt-8 inline-flex w-full items-center justify-center gap-3 rounded-full bg-orange-500 px-7 py-4 text-sm font-bold text-neutral-950 shadow-lg shadow-orange-500/30 transition-all duration-300 hover:-translate-y-1 hover:bg-orange-400 hover:shadow-xl sm:w-fit ${focusRing}`}
             >
-              Explore pricing
+              {copy.explorePricing}
               <ArrowRight size={18} />
             </Link>
           </div>
@@ -425,22 +522,22 @@ export default async function CarDetailPage({
         <div className="mb-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange-600">
-              Find your configuration
+              {copy.findConfiguration}
             </p>
 
             <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-5xl">
-              Explore <span className="text-orange-500">variants.</span>
+              {copy.exploreVariants}
             </h2>
 
             <p className="mt-3 max-w-md text-sm leading-7 text-neutral-500">
-              Compare fuel options and transmissions before you choose.
+              {copy.compare}
             </p>
           </div>
 
           <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-neutral-700 shadow-sm ring-1 ring-neutral-200">
             <CarFront size={17} className="text-orange-500" />
             {variants.length}{" "}
-            {variants.length === 1 ? "variant" : "variants"}
+            {variants.length === 1 ? copy.variant : copy.variants}
           </span>
         </div>
 
@@ -491,7 +588,7 @@ export default async function CarDetailPage({
                       </div>
 
                       <span className="rounded-full bg-neutral-100 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-                        Variant {String(index + 1).padStart(2, "0")}
+                        {copy.variant} {String(index + 1).padStart(2, "0")}
                       </span>
                     </div>
 
@@ -500,18 +597,18 @@ export default async function CarDetailPage({
                     </h3>
 
                     <p className="mt-2 text-sm text-neutral-500">
-                      Choose your preferred configuration.
+                      {copy.chooseConfiguration}
                     </p>
 
                     <div className="mt-5 flex flex-wrap gap-2">
                       <span className="inline-flex items-center gap-2 rounded-full bg-neutral-100 px-4 py-2.5 text-sm font-semibold text-neutral-700">
                         <Fuel size={16} className="text-orange-500" />
-                        {variant.fuel_type}
+                        {translateSpec(variant.fuel_type)}
                       </span>
 
                       <span className="inline-flex items-center gap-2 rounded-full bg-neutral-100 px-4 py-2.5 text-sm font-semibold text-neutral-700">
                         <Settings2 size={16} className="text-orange-500" />
-                        {variant.transmission}
+                        {translateSpec(variant.transmission)}
                       </span>
                     </div>
                   </div>
@@ -524,13 +621,13 @@ export default async function CarDetailPage({
                     }`}
                   >
                     <p className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                      {CITY} on-road price
+                      {CITY} {copy.onRoadPrice}
                     </p>
 
                     <p className="mt-2 text-2xl font-extrabold text-neutral-950 sm:text-3xl">
                       {lowestPrice !== null
                         ? money(lowestPrice)
-                        : "Price on request"}
+                        : copy.priceRequest}
                     </p>
 
                     <p className="mt-2 text-xs text-neutral-500">
@@ -555,28 +652,27 @@ export default async function CarDetailPage({
           <div className="mb-12 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange-600">
-                Transparent pricing
+                {copy.transparentPricing}
               </p>
 
               <h2 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-5xl">
-                Know the full <span className="text-orange-500">price.</span>
+                {copy.fullPrice} <span className="text-orange-500">{copy.price}</span>
               </h2>
 
               <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-500">
-                See the estimated on-road price for each available variant in
-                {` ${CITY} `}, broken down line by line.
+                {copy.estimatedPrice} {CITY}{copy.cityBreakdownSuffix}
               </p>
             </div>
 
             <div className="inline-flex w-fit items-center gap-2 rounded-full bg-orange-50 px-5 py-3 text-sm font-semibold text-orange-700">
               <ShieldCheck size={17} />
-              Transparent breakdown
+              {copy.breakdown}
             </div>
           </div>
 
           {prices.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-neutral-300 bg-[#f7f7f5] p-10 text-center text-neutral-500">
-              Pricing is currently unavailable. Please contact the dealership.
+              {copy.pricingUnavailable}
             </div>
           ) : (
             <div className="space-y-6">
@@ -585,19 +681,19 @@ export default async function CarDetailPage({
 
                 const lines = [
                   {
-                    label: "Ex-showroom price",
+                    label: copy.exShowroom,
                     value: price.ex_showroom_price,
                   },
                   {
-                    label: "Road tax",
+                    label: copy.roadTax,
                     value: price.road_tax,
                   },
                   {
-                    label: "Insurance",
+                    label: copy.insurance,
                     value: price.insurance,
                   },
                   {
-                    label: "Accessories",
+                    label: copy.accessories,
                     value: price.accessories,
                   },
                 ];
@@ -658,11 +754,11 @@ export default async function CarDetailPage({
 
                       <div className="mt-8 border-t border-white/10 pt-5">
                         <p className="text-sm leading-6 text-neutral-400">
-                          Complete price breakdown for {CITY}.
+                          {copy.completeBreakdown} {CITY}.
                         </p>
 
                         <p className="mt-4 text-xs font-semibold text-neutral-300">
-                          Price valid until: {price.valid_until}
+                          {copy.validUntil} {price.valid_until}
                         </p>
 
                         <p className="mt-4 text-xs leading-5 text-neutral-500">
@@ -693,7 +789,7 @@ export default async function CarDetailPage({
               </p>
 
               <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
-                Interested in {car.name}?
+                {copy.interested} {car.name}{copy.interestedSuffix}
               </h2>
 
               <p className="mt-4 max-w-xl text-sm leading-7 text-neutral-400">

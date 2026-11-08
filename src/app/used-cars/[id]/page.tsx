@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import EnquiryForm from "@/components/EnquiryForm";
 import {
   ArrowLeft,
@@ -63,6 +65,75 @@ export default async function UsedCarDetailsPage({
       : from === "dashboard"
         ? "/dashboard"
         : "/";
+  const cookieStore = await cookies();
+  const language = cookieStore.get("drivex-language")?.value === "hi" ? "hi" : "en";
+  const copy = language === "hi" ? {
+    backToUsedCars: "पुरानी कारों पर वापस जाएँ",
+    bookTestDrive: "टेस्ट ड्राइव बुक करें",
+    preOwned: "ड्राइवएक्स पुरानी कारें",
+    available: "पूछताछ के लिए उपलब्ध",
+    location: "लखनऊ, उत्तर प्रदेश",
+    listedPrice: "सूचीबद्ध बिक्री मूल्य",
+    priceNote: "दिखाई गई कीमत स्पष्ट है। अधिक जानकारी के लिए हमारी टीम से संपर्क करें।",
+    exploreDetails: "कार की जानकारी देखें",
+    specifications: "कार की विशेषताएँ",
+    knowVehicle: "अपनी कार को जानें",
+    specificationsNote: "इस पुरानी कार की ज़रूरी जानकारी यहाँ साफ़ तौर पर दी गई है।",
+    manufacturingYear: "निर्माण वर्ष",
+    kilometresDriven: "चलाई गई दूरी",
+    fuelType: "ईंधन का प्रकार",
+    numberOfOwners: "पिछले मालिकों की संख्या",
+    stockId: "स्टॉक आईडी",
+    registration: "रजिस्ट्रेशन",
+    notDisclosed: "उपलब्ध नहीं",
+    vehicleInformation: "कार की जानकारी",
+    inspectionNotes: "इंस्पेक्शन विवरण",
+    inspectionIntro: "अपना निर्णय लेने से पहले उपलब्ध वाहन निरीक्षण की जानकारी देखें।",
+    inspectionReport: "वाहन निरीक्षण रिपोर्ट",
+    availableInformation: "उपलब्ध वाहन जानकारी",
+    inspectionUnavailable: "निरीक्षण रिपोर्ट अभी उपलब्ध नहीं है। कृपया जानकारी के लिए हमारी टीम से संपर्क करें।",
+    exploreMore: "और पुरानी कारें देखें",
+    footerBack: "पुरानी कारों पर वापस जाएँ ↑",
+    footer: "© 2026 DriveX. डेमो डीलरशिप प्लेटफ़ॉर्म।",
+    petrol: "पेट्रोल",
+    diesel: "डीज़ल",
+    electric: "इलेक्ट्रिक",
+    cng: "सीएनजी",
+    hybrid: "हाइब्रिड",
+  } : {
+    backToUsedCars: "Back to Used Cars",
+    bookTestDrive: "Book a test drive",
+    preOwned: "DriveX Pre-Owned",
+    available: "Available for enquiry",
+    location: "Lucknow, Uttar Pradesh",
+    listedPrice: "Listed selling price",
+    priceNote: "Price displayed upfront. Contact our team for more details.",
+    exploreDetails: "Explore vehicle details",
+    specifications: "Vehicle specifications",
+    knowVehicle: "Know your",
+    specificationsNote: "Everything you need to know about this pre-owned vehicle, presented clearly.",
+    manufacturingYear: "Manufacturing year",
+    kilometresDriven: "Kilometres driven",
+    fuelType: "Fuel type",
+    numberOfOwners: "Number of owners",
+    stockId: "Stock ID",
+    registration: "Registration",
+    notDisclosed: "Not disclosed",
+    vehicleInformation: "Vehicle information",
+    inspectionNotes: "Inspection",
+    inspectionIntro: "Review the available vehicle inspection information before making your decision.",
+    inspectionReport: "Vehicle inspection report",
+    availableInformation: "Available vehicle information",
+    inspectionUnavailable: "Inspection report is currently unavailable. Please contact our team for details.",
+    exploreMore: "Explore more used cars",
+    footerBack: "Back to used cars ↑",
+    footer: "© 2026 DriveX. Demonstration dealership platform.",
+    petrol: "Petrol",
+    diesel: "Diesel",
+    electric: "Electric",
+    cng: "CNG",
+    hybrid: "Hybrid",
+  };
   const supabase = await createClient();
 
   const { data: car, error } = await supabase
@@ -82,6 +153,15 @@ export default async function UsedCarDetailsPage({
   }
 
   const vehicle = car as UsedCar;
+
+  const fuelKey = vehicle.fuel_type.toLowerCase();
+  const displayedFuel = fuelKey.includes("petrol") ? copy.petrol
+    : fuelKey.includes("diesel") ? copy.diesel
+    : fuelKey.includes("electric") || fuelKey.includes("ev") ? copy.electric
+    : fuelKey.includes("cng") ? copy.cng
+    : fuelKey.includes("hybrid") ? copy.hybrid
+    : vehicle.fuel_type;
+
 
   // Fetch active showrooms
   const { data: showroomData, error: showroomError } = await supabase
@@ -131,39 +211,39 @@ export default async function UsedCarDetailsPage({
 
   const specifications = [
     {
-      label: "Manufacturing year",
+      label: copy.manufacturingYear,
       value: vehicle.manufacturing_year,
       icon: CalendarDays,
     },
     {
-      label: "Kilometres driven",
+      label: copy.kilometresDriven,
       value: `${vehicle.kilometres_driven.toLocaleString("en-IN")} km`,
       icon: Gauge,
     },
     {
-      label: "Fuel type",
-      value: vehicle.fuel_type,
+      label: copy.fuelType,
+      value: displayedFuel,
       icon: Fuel,
     },
     {
-      label: "Number of owners",
+      label: copy.numberOfOwners,
       value: vehicle.number_of_owners,
       icon: Users,
     },
     {
-      label: "Stock ID",
+      label: copy.stockId,
       value: vehicle.stock_id,
       icon: ShieldCheck,
     },
     {
-      label: "Registration",
-      value: vehicle.registration_masked || "Not disclosed",
+      label: copy.registration,
+      value: vehicle.registration_masked || copy.notDisclosed,
       icon: ClipboardCheck,
     },
   ];
 
   return (
-    <main className="min-h-screen bg-[#f7f7f5] text-neutral-950">
+    <main className="min-h-screen bg-[#f7f7f5] text-neutral-950" style={language === "hi" ? { fontFamily: "var(--font-hindi), sans-serif" } : undefined}>
 
       {/* Navigation */}
       <header className="sticky top-0 z-30 border-b border-neutral-200/70 bg-white/90 backdrop-blur-xl">
@@ -174,7 +254,7 @@ export default async function UsedCarDetailsPage({
             className="flex items-center gap-2 text-sm font-semibold text-neutral-500 transition hover:text-orange-600"
           >
             <ArrowLeft size={17} />
-            Back to Used Cars
+            {copy.backToUsedCars}
           </Link>
 
           <Link
@@ -184,11 +264,13 @@ export default async function UsedCarDetailsPage({
             DRIVE<span className="text-orange-500">X.</span>
           </Link>
 
+          <LanguageSwitcher language={language} />
+
           <Link
             href={`/book-test-drive?from=${from}`}
             className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-5 py-3 text-xs font-bold text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-orange-400 hover:shadow-lg sm:text-sm"
           >
-            Book a test drive
+            {copy.bookTestDrive}
             <ArrowRight size={16} />
           </Link>
 
@@ -218,7 +300,7 @@ export default async function UsedCarDetailsPage({
 
             <div className="absolute bottom-5 left-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/70 px-4 py-2 text-xs font-semibold text-white backdrop-blur-md">
               <CarFront size={16} className="text-orange-500" />
-              DriveX Pre-Owned
+              {copy.preOwned}
             </div>
 
           </div>
@@ -228,16 +310,16 @@ export default async function UsedCarDetailsPage({
 
             <div className="inline-flex items-center gap-2 rounded-full border border-green-400/20 bg-green-500/10 px-4 py-2 text-xs font-bold text-green-400">
               <span className="h-2 w-2 rounded-full bg-green-400" />
-              Available for enquiry
+              {copy.available}
             </div>
 
             <p className="mt-8 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-orange-500">
               <MapPin size={15} />
-              Lucknow, Uttar Pradesh
+              {copy.location}
             </p>
 
             <p className="mt-5 text-sm font-semibold uppercase tracking-[0.2em] text-neutral-400">
-              DriveX Pre-Owned · {vehicle.stock_id}
+              {copy.preOwned} · {vehicle.stock_id}
             </p>
 
             <h1 className="mt-3 text-5xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
@@ -252,7 +334,7 @@ export default async function UsedCarDetailsPage({
             <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.05] p-6 backdrop-blur-md sm:p-8">
 
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-400">
-                Listed selling price
+                {copy.listedPrice}
               </p>
 
               <p className="mt-3 text-4xl font-extrabold tracking-tight text-orange-500 sm:text-5xl">
@@ -260,7 +342,7 @@ export default async function UsedCarDetailsPage({
               </p>
 
               <p className="mt-3 text-sm text-neutral-500">
-                Price displayed upfront. Contact our team for more details.
+                {copy.priceNote}
               </p>
 
             </div>
@@ -269,7 +351,7 @@ export default async function UsedCarDetailsPage({
               href="#vehicle-overview"
               className="mt-7 inline-flex items-center gap-3 rounded-full bg-orange-500 px-7 py-4 text-sm font-bold text-black transition-all duration-300 hover:-translate-y-1 hover:bg-orange-400 hover:shadow-[0_12px_35px_rgba(249,115,22,0.25)]"
             >
-              Explore vehicle details
+              {copy.exploreDetails}
               <ArrowRight size={18} />
             </Link>
 
@@ -287,16 +369,15 @@ export default async function UsedCarDetailsPage({
 
           <div className="mb-10">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange-600">
-              Vehicle specifications
+              {copy.specifications}
             </p>
 
             <h2 className="mt-3 text-4xl font-extrabold tracking-tight sm:text-5xl">
-              Know your <span className="text-orange-500">vehicle.</span>
+              {copy.knowVehicle} <span className="text-orange-500">{language === "hi" ? "कार।" : "vehicle."}</span>
             </h2>
 
             <p className="mt-4 max-w-xl text-sm leading-7 text-neutral-500">
-              Everything you need to know about this pre-owned vehicle,
-              presented clearly.
+              {copy.specificationsNote}
             </p>
           </div>
 
@@ -341,16 +422,15 @@ export default async function UsedCarDetailsPage({
 
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-orange-600">
-                Vehicle information
+                {copy.vehicleInformation}
               </p>
 
               <h2 className="mt-3 text-4xl font-extrabold tracking-tight">
-                Inspection <span className="text-orange-500">notes.</span>
+                {copy.inspectionNotes} <span className="text-orange-500">{language === "hi" ? "विवरण।" : "notes."}</span>
               </h2>
 
               <p className="mt-4 text-sm leading-7 text-neutral-500">
-                Review the available vehicle inspection information
-                before making your decision.
+                {copy.inspectionIntro}
               </p>
             </div>
 
@@ -363,10 +443,10 @@ export default async function UsedCarDetailsPage({
 
                 <div>
                   <h3 className="text-lg font-bold">
-                    Vehicle inspection report
+                    {copy.inspectionReport}
                   </h3>
                   <p className="text-xs text-neutral-500">
-                    Available vehicle information
+                    {copy.availableInformation}
                   </p>
                 </div>
               </div>
@@ -374,7 +454,7 @@ export default async function UsedCarDetailsPage({
               <div className="mt-6 border-t border-neutral-200 pt-6">
                 <p className="whitespace-pre-wrap text-sm leading-8 text-neutral-600">
                   {vehicle.inspection_report ||
-                    "Inspection report is currently unavailable. Please contact our team for details."}
+                    copy.inspectionUnavailable}
                 </p>
               </div>
 
@@ -403,7 +483,7 @@ export default async function UsedCarDetailsPage({
         className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 transition hover:text-orange-700"
       >
         <ArrowLeft size={16} />
-        Explore more used cars
+        {copy.exploreMore}
       </Link>
     </div>
   </div>
@@ -421,14 +501,14 @@ export default async function UsedCarDetailsPage({
           </Link>
 
           <p className="text-xs text-neutral-500">
-            © 2026 DriveX. Demonstration dealership platform.
+            {copy.footer}
           </p>
 
           <Link
             href={`/used-cars?from=${from}`}
             className="text-sm font-semibold text-neutral-400 transition hover:text-orange-500"
           >
-            Back to used cars ↑
+            {copy.footerBack}
           </Link>
 
         </div>

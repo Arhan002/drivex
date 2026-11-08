@@ -2,6 +2,10 @@
 export const instant = false;
 import Link from "next/link";
 import { Bricolage_Grotesque, Figtree } from "next/font/google";
+import { cookies } from "next/headers";
+import { getTranslations, type Language } from "@/lib/i18n";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { connection } from "next/server";
 import {
   ArrowRight,
   CalendarDays,
@@ -25,7 +29,7 @@ const display = Bricolage_Grotesque({
 const body = Figtree({ subsets: ["latin"], variable: "--font-body" });
 
 // Tailwind needs the full class string in the source, so keep it as a const.
-const heading = "font-[family-name:var(--font-display)] tracking-tight";
+// Heading font is selected per language inside Home so Devanagari uses its own font.
 // Outline shown only for keyboard users (accessibility)
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500";
@@ -37,13 +41,6 @@ const formatPrice = (amount: number) =>
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(amount);
-
-const navLinks = [
-  { href: "/cars?from=home", label: "New cars" },
-  { href: "/used-cars?from=home", label: "Used cars" },
-  { href: "#why-drivex", label: "Why DriveX" },
-  { href: "#contact", label: "Contact" },
-];
 
 const photos = [
   "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=900&q=80",
@@ -114,14 +111,44 @@ function PriceRow({ label, value }: { label: string; value: number }) {
   );
 }
 
-export default async function Home({
+export default async function Home(
+  
+  {
   searchParams,
+  
+  
 }: {
   searchParams: Promise<{ body?: string }>;
 }) {
-  // In Next 15/16 searchParams is a Promise. Read ?body=SUV from the URL
+  await connection();
   const { body: selectedBody } = await searchParams;
-  const supabase = await createClient();
+
+// Read the buyer's saved language preference
+const cookieStore = await cookies();
+const language: Language =
+  cookieStore.get("drivex-language")?.value === "hi" ? "hi" : "en";
+
+const t = getTranslations(language);
+  const heading =
+    language === "hi"
+      ? "font-[family-name:var(--font-hindi)] tracking-normal"
+      : "font-[family-name:var(--font-display)] tracking-tight";
+  const translateBodyType = (value: string) =>
+    language === "hi" ? ({ SUV: "एसयूवी", Sedan: "सेडान", Hatchback: "हैचबैक" }[value] ?? value) : value;
+  const translateFuel = (value: string | null | undefined) =>
+    language === "hi" ? ({ Petrol: "पेट्रोल", Diesel: "डीज़ल", Electric: "इलेक्ट्रिक", CNG: "सीएनजी", Hybrid: "हाइब्रिड" }[value ?? ""] ?? value ?? t.notSpecified) : value || t.notSpecified;
+  const translateTransmission = (value: string | null | undefined) =>
+    language === "hi" ? ({ Automatic: "ऑटोमैटिक", Manual: "मैनुअल" }[value ?? ""] ?? value ?? t.notSpecified) : value || t.notSpecified;
+
+// Navigation labels
+const navLinks = [
+  { href: "/cars?from=home", label: t.newCars },
+  { href: "/used-cars?from=home", label: t.usedCars },
+  { href: "#why-drivex", label: t.whyDriveX },
+  { href: "#contact", label: t.contact },
+];
+
+const supabase = await createClient();
 
   // Query 1: active models, with their variants and prices nested inside
   const { data: modelData, error: modelError } = await supabase
@@ -181,6 +208,12 @@ export default async function Home({
   return (
     <main
       className={`${display.variable} ${body.variable} min-h-screen overflow-x-hidden bg-white font-[family-name:var(--font-body)] text-neutral-900 antialiased`}
+      style={{
+        fontFamily:
+          language === "hi"
+            ? "var(--font-hindi), sans-serif"
+            : "var(--font-body), sans-serif",
+      }}
     >
       {/* NAVIGATION */}
       <nav className="sticky top-0 z-50 border-b border-neutral-200 bg-white/90 backdrop-blur">
@@ -203,12 +236,15 @@ export default async function Home({
               </a>
             ))}
           </div>
+          <div className="hidden md:block">
+            <LanguageSwitcher language={language} />
+          </div>
 
           <Link
             href="/book-test-drive?from=home"
             className={`hidden rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-neutral-950 transition-colors hover:bg-orange-400 md:inline-block ${focusRing}`}
           >
-            Book a test drive
+            {t.bookTestDrive}
           </Link>
 
           {/* Mobile menu, no JS needed */}
@@ -231,11 +267,14 @@ export default async function Home({
                   {l.label}
                 </a>
               ))}
-              <Link
+              <div className="px-4 py-3">
+              <LanguageSwitcher language={language} />
+              </div>
+                <Link
                 href="/book-test-drive?from=home"
                 className="mt-2 block rounded-xl bg-orange-500 px-4 py-3 text-center text-sm font-semibold text-neutral-950"
               >
-                Book a test drive
+                {t.bookTestDrive}
               </Link>
             </div>
           </details>
@@ -263,27 +302,36 @@ export default async function Home({
     {/* Left content */}
     <div className="max-w-3xl">
 
-      <div className="animate-fade-in inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white backdrop-blur-md">
+      <div
+        className={`animate-fade-in inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-white backdrop-blur-md ${
+          language === "hi" ? "tracking-normal" : "uppercase tracking-[0.2em]"
+        }`}
+      >
         <span className="h-2 w-2 rounded-full bg-orange-500" />
-        DriveX Automotive Experience
+        {t.heroEyebrow}
       </div>
 
       <p className="mt-9 flex items-center gap-2 text-sm font-medium text-neutral-300 animate-fade-in">
         <MapPin size={16} className="text-orange-500" />
-        Showrooms in Lucknow, Uttar Pradesh
+        {t.showrooms} · Lucknow, Uttar Pradesh
       </p>
 
-      <h1 className={`${heading} mt-5 text-5xl font-extrabold leading-[1.02] text-white sm:text-6xl lg:text-7xl xl:text-8xl animate-fade-up`}>
-        Your next
+      <h1
+        className={`${heading} mt-5 font-extrabold text-white animate-fade-up ${
+          language === "hi"
+            ? "text-5xl leading-[1.28] sm:text-6xl lg:text-7xl xl:text-7xl"
+            : "text-5xl leading-[1.02] sm:text-6xl lg:text-7xl xl:text-8xl"
+        }`}
+      >
+        {t.heroTitleFirst}
         <br />
-        <span className="text-orange-500">drive</span> starts
+        <span className="text-orange-500">{t.heroTitleAccent}</span> {t.heroTitleSecond}
         <br />
-        here.
+        {t.heroTitleLast}
       </h1>
 
       <p className="mt-7 max-w-xl text-base leading-8 text-neutral-300 sm:text-lg">
-        Discover your perfect car with transparent on-road pricing,
-        carefully selected vehicles and a buying experience built around you.
+        {t.heroDescription}
       </p>
 
       <div className="mt-9 flex flex-col gap-4 sm:flex-row">
@@ -291,7 +339,7 @@ export default async function Home({
           href="#new-cars"
           className={`group inline-flex items-center justify-center gap-3 rounded-full bg-orange-500 px-8 py-4 font-bold text-black transition-all duration-300 hover:-translate-y-1 hover:bg-orange-400 hover:shadow-[0_12px_35px_rgba(249,115,22,0.3)] ${focusRing}`}
         >
-          Explore vehicles
+          {t.exploreVehicles}
           <ArrowRight size={19} className="transition-transform duration-300 group-hover:translate-x-1" />
         </a>
 
@@ -299,7 +347,7 @@ export default async function Home({
           href="/used-cars?from=home"
           className={`inline-flex items-center justify-center gap-2 rounded-full border border-white/40 bg-white/5 px-8 py-4 font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-white hover:bg-white hover:text-black ${focusRing}`}
         >
-          Explore pre-owned
+          {t.explorePreOwned}
           <ChevronRight size={18} />
         </Link>
       </div>
@@ -308,22 +356,22 @@ export default async function Home({
       <div className="mt-14 flex flex-wrap gap-8 border-t border-white/20 pt-7 text-white sm:gap-12">
         <div>
           <p className={`${heading} text-3xl font-bold`}>03</p>
-          <p className="mt-1 text-xs uppercase tracking-widest text-neutral-400">Showrooms</p>
+          <p className="mt-1 text-xs uppercase tracking-widest text-neutral-400">{t.showrooms}</p>
         </div>
 
         <div>
           <p className={`${heading} text-3xl font-bold`}>02</p>
-          <p className="mt-1 text-xs uppercase tracking-widest text-neutral-400">Service centres</p>
+          <p className="mt-1 text-xs uppercase tracking-widest text-neutral-400">{t.serviceCentres}</p>
         </div>
 
         <div>
           <p className={`${heading} text-3xl font-bold`}>100%</p>
-          <p className="mt-1 text-xs uppercase tracking-widest text-neutral-400">Price clarity</p>
+          <p className="mt-1 text-xs uppercase tracking-widest text-neutral-400">{t.priceClarity}</p>
         </div>
       </div>
     </div>
 
-    {/* Featured vehicle card */}
+    {/* {t.featuredVehicle} card */}
     {featured && (
       <Link
         href={`/cars/${featured.id}`}
@@ -331,10 +379,10 @@ export default async function Home({
       >
         <div className="flex items-center justify-between px-2 py-3">
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-300">
-            Featured vehicle
+            {t.featuredVehicle}
           </span>
           <span className="rounded-full bg-orange-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-black">
-            Explore
+            {t.explore}
           </span>
         </div>
 
@@ -348,7 +396,7 @@ export default async function Home({
 
         <div className="flex items-center justify-between gap-3 px-2 pb-2 pt-5 text-white">
           <div>
-            <p className="text-sm text-neutral-400">Discover the</p>
+            <p className="text-sm text-neutral-400">{t.featuredVehicle}</p>
             <h2 className={`${heading} mt-1 text-2xl font-bold`}>
               {featured.name}
             </h2>
@@ -360,12 +408,12 @@ export default async function Home({
 
         <div className="mx-2 mt-4 border-t border-white/15 pt-4">
           <p className="text-xs uppercase tracking-wider text-neutral-400">
-            On-road price · Lucknow
+            {t.onRoadPrice} · Lucknow
           </p>
           <p className={`${heading} mt-1 text-2xl font-bold text-white`}>
             {featuredPrice?.onRoad != null
               ? formatPrice(featuredPrice.onRoad)
-              : "Price on request"}
+              : t.priceOnRequest}
           </p>
         </div>
       </Link>
@@ -376,10 +424,10 @@ export default async function Home({
   {/* Bottom scroll indicator */}
   <a
     href="#new-cars"
-    aria-label="Scroll to new cars"
+    aria-label={t.scrollToNewCars}
     className="absolute bottom-5 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-xs uppercase tracking-[0.2em] text-neutral-400 transition-colors hover:text-orange-500 sm:flex"
   >
-    Scroll to explore
+    {t.scrollToExplore}
     <ChevronDown size={18} className="animate-bounce" />
   </a>
 </section>
@@ -395,16 +443,15 @@ export default async function Home({
   <div className="mb-12 flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
     <div>
       <p className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-orange-600">
-        Find your perfect match
+        {t.findPerfectMatch}
       </p>
 
       <h2 className={`${heading} text-4xl font-extrabold sm:text-5xl`}>
-        Explore our <span className="text-orange-500">collection.</span>
+        {t.exploreCollection}
       </h2>
 
       <p className="mt-3 max-w-md text-base leading-7 text-neutral-500">
-        Discover the DriveX range. Compare features, explore variants
-        and know your on-road price upfront.
+        {t.discoverRange}
       </p>
     </div>
 
@@ -420,7 +467,7 @@ export default async function Home({
               : "border-neutral-200 bg-white text-neutral-600 hover:border-orange-500 hover:text-orange-600"
           } ${focusRing}`}
         >
-          All
+          {t.all}
         </Link>
 
         {bodyTypes.map((type) => (
@@ -434,7 +481,7 @@ export default async function Home({
                 : "border-neutral-200 bg-white text-neutral-600 hover:border-orange-500 hover:text-orange-600"
             } ${focusRing}`}
           >
-            {type}
+            {translateBodyType(type)}
           </Link>
         ))}
       </div>
@@ -457,14 +504,14 @@ export default async function Home({
     <div className="rounded-3xl border border-dashed border-neutral-300 bg-neutral-50 p-12 text-center sm:p-16">
       <p className={`${heading} text-2xl font-bold`}>
         {selectedBody
-          ? `No ${selectedBody} models right now.`
-          : "No new cars listed yet."}
+          ? t.noBodyTypeCars.replace("{type}", translateBodyType(selectedBody))
+          : t.noNewCars}
       </p>
 
       <p className="mt-3 text-sm text-neutral-500">
         {selectedBody
-          ? "Try another body type or view all cars."
-          : "Add active models from the admin dashboard."}
+          ? t.tryAnotherBodyType
+          : t.addActiveModels}
       </p>
     </div>
   ) : (
@@ -490,7 +537,7 @@ export default async function Home({
 
               {car.body_type && (
                 <span className="absolute left-4 top-4 rounded-full border border-white/50 bg-white/95 px-4 py-1.5 text-xs font-bold text-neutral-800 shadow-sm backdrop-blur">
-                  {car.body_type}
+                  {translateBodyType(car.body_type)}
                 </span>
               )}
 
@@ -507,7 +554,7 @@ export default async function Home({
                 </h3>
 
                 <p className="mt-2 min-h-[2.5rem] text-sm leading-6 text-neutral-500">
-                  {car.description || "Explore this model at DriveX."}
+                  {car.description || t.exploreModelAtDriveX}
                 </p>
               </div>
 
@@ -515,25 +562,25 @@ export default async function Home({
               <div className="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm text-neutral-600">
                 <span className="flex items-center gap-2">
                   <Fuel size={17} className="text-orange-500" />
-                  {variant?.fuel_type || "Multiple fuels"}
+                  {variant?.fuel_type ? translateFuel(variant.fuel_type) : t.multipleFuels}
                 </span>
 
                 <span className="flex items-center gap-2">
                   <Settings2 size={17} className="text-orange-500" />
-                  {variant?.transmission || "Multiple options"}
+                  {variant?.transmission ? translateTransmission(variant.transmission) : t.multipleOptions}
                 </span>
               </div>
 
               {/* Pricing */}
               <div className="mt-6 border-t border-neutral-100 pt-5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                  On-road price · Lucknow
+                  {t.onRoadPrice} · Lucknow
                 </p>
 
                 <p className={`${heading} mt-2 text-2xl font-bold text-neutral-950`}>
                   {onRoad !== null
                     ? formatPrice(onRoad)
-                    : "Price on request"}
+                    : t.priceOnRequest}
                 </p>
 
                 {/* Price breakdown */}
@@ -542,7 +589,7 @@ export default async function Home({
                     <summary
                       className={`flex cursor-pointer list-none items-center gap-2 font-semibold text-orange-700 transition-colors hover:text-orange-500 [&::-webkit-details-marker]:hidden ${focusRing}`}
                     >
-                      See price breakdown
+                      {t.priceBreakdown}
 
                       <ChevronDown
                         size={16}
@@ -552,33 +599,33 @@ export default async function Home({
 
                     <dl className="mt-3 divide-y divide-neutral-100 rounded-xl bg-neutral-50 px-4">
                       <PriceRow
-                        label="Ex-showroom"
+                        label={t.exShowroom}
                         value={Number(price.ex_showroom_price)}
                       />
 
                       <PriceRow
-                        label="Road tax"
+                        label={t.roadTax}
                         value={Number(price.road_tax)}
                       />
 
                       <PriceRow
-                        label="Insurance"
+                        label={t.insurance}
                         value={Number(price.insurance)}
                       />
 
                       <PriceRow
-                        label="Accessories"
+                        label={t.accessories}
                         value={Number(price.accessories)}
                       />
                     </dl>
 
                     <p className="mt-2 text-xs text-neutral-400">
-                      Valid until {price.valid_until}
+                      {t.validUntil} {price.valid_until}
                     </p>
                   </details>
                 ) : (
                   <p className="mt-3 text-sm text-neutral-500">
-                    Contact our sales team for pricing.
+                    {t.contactSalesForPricing}
                   </p>
                 )}
               </div>
@@ -588,7 +635,7 @@ export default async function Home({
                 href={`/cars/${car.id}`}
                 className={`mt-6 flex items-center justify-between rounded-xl bg-neutral-950 px-5 py-4 text-sm font-semibold text-white transition-all duration-300 hover:bg-orange-500 hover:text-neutral-950 hover:shadow-lg ${focusRing}`}
               >
-                <span>Explore vehicle</span>
+                <span>{t.exploreVehicle}</span>
 
                 <ChevronRight
                   size={19}
@@ -616,24 +663,23 @@ export default async function Home({
     <div className="mb-12 flex flex-col justify-between gap-6 md:flex-row md:items-end">
       <div>
         <p className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-orange-500">
-          The DriveX pre-owned collection
+          {t.usedCollectionEyebrow}
         </p>
 
         <h2 className={`${heading} text-4xl font-extrabold sm:text-5xl`}>
-          Pre-owned.
+          {t.preOwnedTitle}
           <br className="hidden sm:block" />
-          <span className="text-orange-500"> Carefully chosen.</span>
+          <span className="text-orange-500"> {t.carefullyChosen}</span>
         </h2>
 
         <p className="mt-4 max-w-lg text-base leading-7 text-neutral-400">
-          Explore available pre-owned vehicles with transparent pricing,
-          mileage and vehicle details upfront.
+          {t.usedCollectionDescription}
         </p>
       </div>
 
       <div className="flex items-center gap-3 text-sm text-neutral-400">
         <span className="h-2 w-2 rounded-full bg-orange-500" />
-        Available inventory
+        {t.availableInventory}
       </div>
     </div>
 
@@ -643,7 +689,7 @@ export default async function Home({
         role="alert"
         className="mb-6 rounded-2xl border border-red-900 bg-red-950/50 p-4 text-sm text-red-300"
       >
-        We couldn&apos;t load used cars. Refresh to try again.
+        {t.usedCarsLoadError}
       </p>
     )}
 
@@ -651,11 +697,11 @@ export default async function Home({
     {usedCars.length === 0 ? (
       <div className="rounded-3xl border border-dashed border-neutral-700 bg-neutral-900 p-12 text-center sm:p-16">
         <h3 className={`${heading} text-2xl font-bold`}>
-          No pre-owned cars available right now.
+          {t.noUsedCars}
         </h3>
 
         <p className="mt-3 text-sm text-neutral-400">
-          New arrivals are added regularly. Check back soon.
+          {t.usedCarsCheckBack}
         </p>
       </div>
     ) : (
@@ -679,11 +725,11 @@ export default async function Home({
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
               <span className="absolute left-4 top-4 rounded-full border border-white/20 bg-black/70 px-4 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
-                Available
+                {t.available}
               </span>
 
               <span className="absolute bottom-4 right-4 rounded-full bg-orange-500 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-black">
-                Pre-owned
+                {t.preOwned}
               </span>
             </div>
 
@@ -692,7 +738,7 @@ export default async function Home({
 
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
-                  DriveX used inventory
+                  {t.usedInventory}
                 </p>
 
                 <h3 className={`${heading} mt-2 text-2xl font-bold text-white`}>
@@ -703,23 +749,23 @@ export default async function Home({
               {/* Specifications */}
               <div className="mt-6 grid grid-cols-3 gap-3 border-y border-white/10 py-5">
                 <div>
-                  <p className="text-xs text-neutral-500">Year</p>
+                  <p className="text-xs text-neutral-500">{t.year}</p>
                   <p className="mt-1 text-sm font-semibold text-white">
                     {car.manufacturing_year}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-xs text-neutral-500">Driven</p>
+                  <p className="text-xs text-neutral-500">{t.driven}</p>
                   <p className="mt-1 text-sm font-semibold text-white">
                     {Number(car.kilometres_driven ?? 0).toLocaleString("en-IN")} km
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-xs text-neutral-500">Fuel</p>
+                  <p className="text-xs text-neutral-500">{t.fuel}</p>
                   <p className="mt-1 text-sm font-semibold text-white">
-                    {car.fuel_type}
+                    {translateFuel(car.fuel_type)}
                   </p>
                 </div>
               </div>
@@ -727,7 +773,7 @@ export default async function Home({
               {/* Price */}
               <div className="mt-5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-                  Asking price
+                  {t.askingPrice}
                 </p>
 
                 <p className={`${heading} mt-2 text-2xl font-bold text-white`}>
@@ -740,7 +786,7 @@ export default async function Home({
                 href={`/used-cars/${car.stock_id}`}
                 className={`mt-6 flex items-center justify-between rounded-xl bg-orange-500 px-5 py-4 text-sm font-bold text-black transition-all duration-300 hover:bg-orange-400 hover:shadow-[0_10px_30px_rgba(249,115,22,0.15)] ${focusRing}`}
               >
-                <span>View vehicle</span>
+                <span>{t.viewVehicle}</span>
 
                 <ArrowRight
                   size={19}
@@ -767,19 +813,17 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
     <div className="mb-14 grid gap-6 lg:grid-cols-[1fr_0.7fr] lg:items-end">
       <div>
         <p className="mb-4 text-xs font-bold uppercase tracking-[0.25em] text-orange-600">
-          The DriveX difference
+          {t.theDriveXDifference}
         </p>
 
         <h2 className={`${heading} max-w-2xl text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl`}>
-          A better way to find your
-          <span className="text-orange-500"> next car.</span>
+          {t.betterWayToFind}
+          <span className="text-orange-500"> {t.nextCar}</span>
         </h2>
       </div>
 
       <p className="max-w-lg text-base leading-8 text-neutral-500 lg:justify-self-end">
-        Buying a car should feel exciting, not confusing.
-        We make every step simpler with transparent pricing,
-        clear information and convenient online bookings.
+        {t.whyDriveXDescription}
       </p>
     </div>
 
@@ -790,26 +834,23 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
         {
           icon: ShieldCheck,
           number: "01",
-          title: "Clear pricing",
-          description:
-            "See ex-showroom, tax, insurance and accessories before you walk in.",
-          tag: "No pricing surprises",
+          title: t.clearPricing,
+          description: t.clearPricingDescription,
+          tag: t.noPricingSurprises,
         },
         {
           icon: Gauge,
           number: "02",
-          title: "Compare variants",
-          description:
-            "Check fuel type, transmission and specifications side by side.",
-          tag: "Choose with confidence",
+          title: t.compareVariants,
+          description: t.compareVariantsDescription,
+          tag: t.chooseWithConfidence,
         },
         {
           icon: CalendarDays,
           number: "03",
-          title: "Book online",
-          description:
-            "Choose a showroom and a time for your test drive in a few taps.",
-          tag: "Your time, your choice",
+          title: t.bookOnline,
+          description: t.bookOnlineDescription,
+          tag: t.yourTimeYourChoice,
         },
       ].map((item, index) => {
         const Icon = item.icon;
@@ -861,14 +902,14 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
     {/* Bottom statement */}
     <div className="mt-10 flex flex-col justify-between gap-4 border-t border-neutral-200 pt-7 sm:flex-row sm:items-center">
       <p className={`${heading} text-xl font-bold text-neutral-900`}>
-        Less guesswork. More driving.
+        {t.lessGuesswork}
       </p>
 
       <Link
         href="/book-test-drive?from=home"
         className={`inline-flex items-center gap-2 text-sm font-bold text-orange-600 transition-colors hover:text-orange-700 ${focusRing}`}
       >
-        Experience DriveX
+        {t.experienceDriveX}
         <ArrowRight size={17} />
       </Link>
     </div>
@@ -880,10 +921,10 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
 <section id="book-test-drive" className="scroll-mt-20 bg-[#f7f7f5] px-4 pb-16 pt-0 sm:px-6 sm:pb-20 lg:px-8 lg:pb-20">        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 rounded-3xl bg-orange-500 px-6 py-10 text-neutral-950 shadow-xl shadow-orange-950/10 sm:px-12 sm:py-12 md:flex-row md:items-center">
           <div>
             <h2 className={`${heading} text-3xl font-extrabold sm:text-5xl`}>
-              Drive it before you decide.
+              {t.driveBeforeDecide}
             </h2>
             <p className="mt-3 max-w-md text-neutral-900/80">
-              Pick a car and a showroom. We&apos;ll have it ready when you arrive.
+              {t.testDriveDescription}
             </p>
           </div>
 
@@ -891,7 +932,7 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
             href="/book-test-drive?from=home"
             className={`inline-flex w-full items-center justify-center gap-2 rounded-full bg-neutral-950 px-8 py-4 font-semibold text-white transition-colors hover:bg-neutral-800 md:w-auto ${focusRing}`}
           >
-            Book a test drive <ArrowRight size={18} />
+            {t.bookTestDrive} <ArrowRight size={18} />
           </Link>
         </div>
       </section>
@@ -916,20 +957,19 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
         </Link>
 
         <p className="mt-5 max-w-sm text-sm leading-7 text-neutral-400">
-          New and pre-owned cars in Lucknow, with transparent
-          pricing and a better way to discover your next vehicle.
+          {t.footerDescription}
         </p>
 
         <p className="mt-6 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">
           <span className="h-2 w-2 rounded-full bg-orange-500" />
-          DriveX Automotive Experience
+          {t.lessGuesswork}
         </p>
       </div>
 
       {/* Browse */}
       <div>
         <h3 className="text-sm font-bold uppercase tracking-widest text-white">
-          Explore
+          {t.explore}
         </h3>
 
         <ul className="mt-5 space-y-4 text-sm text-neutral-400">
@@ -938,7 +978,7 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
               href="/cars?from=home"
               className="transition-colors hover:text-orange-500"
             >
-              New cars
+              {t.newCars}
             </Link>
           </li>
 
@@ -947,7 +987,7 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
               href="#used-cars"
               className="transition-colors hover:text-orange-500"
             >
-              Used cars
+              {t.usedCars}
             </a>
           </li>
 
@@ -956,7 +996,7 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
               href="#why-drivex"
               className="transition-colors hover:text-orange-500"
             >
-              Why DriveX
+              {t.whyDriveX}
             </a>
           </li>
 
@@ -965,7 +1005,7 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
               href="/book-test-drive?from=home"
               className="transition-colors hover:text-orange-500"
             >
-              Book a test drive
+              {t.bookTestDrive}
             </Link>
           </li>
         </ul>
@@ -974,7 +1014,7 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
       {/* Location */}
       <div>
         <h3 className="text-sm font-bold uppercase tracking-widest text-white">
-          Visit us
+          {t.visitUs}
         </h3>
 
         <p className="mt-5 flex items-start gap-3 text-sm leading-7 text-neutral-400">
@@ -995,7 +1035,7 @@ className="relative scroll-mt-20 overflow-hidden bg-[#f7f7f5] px-4 pt-20 pb-10 s
         href="#"
         className="text-xs font-semibold text-neutral-400 transition-colors hover:text-orange-500"
       >
-        Back to top ↑
+        {t.backToTop} ↑
       </a>
     </div>
 

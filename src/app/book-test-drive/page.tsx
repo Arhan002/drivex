@@ -16,6 +16,49 @@ import {
   Mail,
 } from "lucide-react";
 
+
+type Language = "en" | "hi";
+
+const copy = {
+  en: {
+    step: "Step", backBuyer: "Back to buyer dashboard", backDashboard: "Back to dashboard", backHome: "Back to home",
+    experience: "DriveX Experience", title: "Book a test drive",
+    intro: "Choose a showroom, pick a car, and tell us when suits you. It only takes a minute.",
+    showroom: "Choose your showroom", selectShowroom: "Select showroom",
+    vehicle: "Choose your vehicle", selectVehicle: "Select demo vehicle", pickShowroom: "Pick a showroom first",
+    car: "Car", variant: "Variant", dateTime: "Pick a date and time", date: "Date", time: "Time",
+    contact: "Your contact details", fullName: "Full name", email: "Email address", phone: "10-digit phone number",
+    consent: "I agree to be contacted by DriveX regarding this test-drive booking and acknowledge the privacy notice.",
+    submitting: "Submitting...", confirm: "Confirm test drive", viewDashboard: "View your dashboard",
+    whatToExpect: "What to expect", expect1: "Pick a showroom and the car you want to drive.",
+    expect2: "Choose a date and time that works for you.", expect3: "Our team contacts you to confirm the booking.",
+    needHelp: "Need help?", helpText: "If a showroom or car is missing from the list, it may not be available for test drives right now. Try another option.",
+    loading: "Loading test drive booking...", loadError: "Unable to load booking options.",
+    loadOptionsError: "Unable to load options.", pastDate: "Please select today or a future date.",
+    bookingFailed: "Booking failed.", unexpected: "Something went wrong. Please try again.",
+    bookingSuccess: "Booking successful! Booking ID:", language: "Language",
+  },
+  hi: {
+    step: "चरण", backBuyer: "खरीदार डैशबोर्ड पर वापस जाएँ", backDashboard: "डैशबोर्ड पर वापस जाएँ", backHome: "होम पर वापस जाएँ",
+    experience: "DriveX अनुभव", title: "टेस्ट ड्राइव बुक करें",
+    intro: "शोरूम चुनें, अपनी पसंद की कार चुनें और अपनी सुविधानुसार समय बताएँ। इसमें केवल एक मिनट लगेगा।",
+    showroom: "अपना शोरूम चुनें", selectShowroom: "शोरूम चुनें",
+    vehicle: "अपनी कार चुनें", selectVehicle: "डेमो कार चुनें", pickShowroom: "पहले शोरूम चुनें",
+    car: "कार", variant: "वेरिएंट", dateTime: "तारीख और समय चुनें", date: "तारीख", time: "समय",
+    contact: "आपकी संपर्क जानकारी", fullName: "पूरा नाम", email: "ईमेल पता", phone: "10 अंकों का फ़ोन नंबर",
+    consent: "मैं इस टेस्ट ड्राइव बुकिंग के संबंध में DriveX से संपर्क किए जाने की सहमति देता/देती हूँ और गोपनीयता सूचना को स्वीकार करता/करती हूँ।",
+    submitting: "जमा किया जा रहा है...", confirm: "टेस्ट ड्राइव की पुष्टि करें", viewDashboard: "अपना डैशबोर्ड देखें",
+    whatToExpect: "आगे क्या होगा", expect1: "शोरूम और वह कार चुनें जिसे आप चलाना चाहते हैं।",
+    expect2: "अपनी सुविधानुसार तारीख और समय चुनें।", expect3: "बुकिंग की पुष्टि के लिए हमारी टीम आपसे संपर्क करेगी।",
+    needHelp: "मदद चाहिए?", helpText: "यदि सूची में कोई शोरूम या कार दिखाई नहीं दे रही है, तो संभव है कि वह अभी टेस्ट ड्राइव के लिए उपलब्ध न हो। कोई दूसरा विकल्प चुनें।",
+    loading: "टेस्ट ड्राइव बुकिंग लोड हो रही है...", loadError: "बुकिंग विकल्प लोड नहीं हो सके।",
+    loadOptionsError: "विकल्प लोड नहीं हो सके।", pastDate: "कृपया आज या भविष्य की तारीख चुनें।",
+    bookingFailed: "बुकिंग नहीं हो सकी।", unexpected: "कुछ गलत हो गया। कृपया फिर से कोशिश करें।",
+    bookingSuccess: "बुकिंग सफल! बुकिंग आईडी:", language: "भाषा",
+  },
+} as const;
+
+
 type Showroom = {
   id: string;
   name: string;
@@ -44,10 +87,12 @@ function StepHeader({
   step,
   title,
   icon: Icon,
+  language,
 }: {
   step: number;
   title: string;
   icon: React.ElementType;
+  language: Language;
 }) {
   return (
     <div className="mb-5 flex items-center gap-3">
@@ -56,7 +101,7 @@ function StepHeader({
       </span>
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-orange-600">
-          Step {step}
+          {copy[language].step} {step}
         </p>
         <h2 className="text-lg font-bold text-neutral-950">{title}</h2>
       </div>
@@ -65,7 +110,9 @@ function StepHeader({
 }
 
 function BookTestDriveContent() {
-    const searchParams = useSearchParams();
+  const [language, setLanguage] = useState<Language>("en");
+  const t = copy[language];
+  const searchParams = useSearchParams();
   const source = searchParams.get("from");
   const from =
     source === "buyer"
@@ -99,6 +146,18 @@ function BookTestDriveContent() {
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
 
+  useEffect(() => {
+    const match = document.cookie.match(/(?:^|; )drivex-language=(en|hi)(?:;|$)/);
+    setLanguage(match?.[1] === "hi" ? "hi" : "en");
+  }, []);
+
+  function changeLanguage(nextLanguage: Language) {
+    document.cookie = `drivex-language=${nextLanguage}; path=/; max-age=31536000; samesite=lax`;
+    setLanguage(nextLanguage);
+  }
+
+
+
   // Load the current local date and booking options after mounting.
   useEffect(() => {
   async function loadOptions() {
@@ -115,7 +174,7 @@ function BookTestDriveContent() {
       setToday(localDate);
 
       if (!response.ok) {
-        throw new Error("Unable to load booking options.");
+        throw new Error(t.loadError);
       }
 
       const data = await response.json();
@@ -126,7 +185,7 @@ function BookTestDriveContent() {
       setMessage(
         error instanceof Error
           ? error.message
-          : "Unable to load options."
+          : t.loadOptionsError
       );
     }
   }
@@ -191,7 +250,7 @@ function BookTestDriveContent() {
     try {
       // Prevent past dates.
       if (date < today) {
-        throw new Error("Please select today or a future date.");
+        throw new Error(t.pastDate);
       }
 
       const scheduledAt = new Date(
@@ -219,13 +278,13 @@ function BookTestDriveContent() {
 
       if (!response.ok) {
         throw new Error(
-          result.error || "Booking failed."
+          result.error || t.bookingFailed
         );
       }
 
       setIsSuccess(true);
       setMessage(
-        `Booking successful! Booking ID: ${result.booking.booking_id}`
+        `${t.bookingSuccess} ${result.booking.booking_id}`
       );
 
       // Keep authenticated buyers' contact details for their next booking.
@@ -245,7 +304,7 @@ function BookTestDriveContent() {
       setMessage(
         error instanceof Error
           ? error.message
-          : "Something went wrong. Please try again."
+          : t.unexpected
       );
     } finally {
       setLoading(false);
@@ -253,7 +312,7 @@ function BookTestDriveContent() {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-100 text-neutral-900">
+    <main className="min-h-screen bg-neutral-100 text-neutral-900" style={language === "hi" ? { fontFamily: "var(--font-hindi), sans-serif" } : undefined}>
       {/* Top bar */}
       <header className="border-b border-neutral-200 bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
@@ -277,14 +336,13 @@ function BookTestDriveContent() {
         {/* Page heading */}
         <div className="mb-10 max-w-2xl">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-orange-600">
-            DriveX Experience
+            {t.experience}
           </p>
           <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-5xl">
-            Book a test drive
+            {t.title}
           </h1>
           <p className="mt-4 text-neutral-600">
-            Choose a showroom, pick a car, and tell us when suits you. It only
-            takes a minute.
+            {t.intro}
           </p>
         </div>
 
@@ -296,7 +354,7 @@ function BookTestDriveContent() {
           >
             {/* Showroom and vehicle */}
             <section>
-              <StepHeader step={1} title="Choose your showroom" icon={MapPin} />
+              <StepHeader step={1} title={t.showroom} language={language} icon={MapPin} />
               <select
                 required
                 value={showroomId}
@@ -306,7 +364,7 @@ function BookTestDriveContent() {
                 }}
                 className={inputClass}
               >
-                <option value="">Select showroom</option>
+                <option value="">{t.selectShowroom}</option>
                 {showrooms.map((showroom) => (
                   <option key={showroom.id} value={showroom.id}>
                     {showroom.name} – {showroom.city}
@@ -316,7 +374,7 @@ function BookTestDriveContent() {
             </section>
 
             <section>
-              <StepHeader step={2} title="Choose your vehicle" icon={CarFront} />
+              <StepHeader step={2} title={t.vehicle} language={language} icon={CarFront} />
               <select
                 required
                 value={vehicleId}
@@ -326,13 +384,13 @@ function BookTestDriveContent() {
               >
                 <option value="">
                   {showroomId
-                    ? "Select demo vehicle"
-                    : "Pick a showroom first"}
+                    ? "{t.selectVehicle}"
+                    : "{t.pickShowroom}"}
                 </option>
                 {filteredVehicles.map((vehicle) => (
                   <option key={vehicle.id} value={vehicle.id}>
-                    {vehicle.car_variants?.car_models?.name ?? "Car"} –{" "}
-                    {vehicle.car_variants?.variant_name ?? "Variant"}
+                    {vehicle.car_variants?.car_models?.name ?? t.car} –{" "}
+                    {vehicle.car_variants?.variant_name ?? t.variant}
                   </option>
                 ))}
               </select>
@@ -340,14 +398,14 @@ function BookTestDriveContent() {
 
             {/* Date and time */}
             <section>
-              <StepHeader step={3} title="Pick a date and time" icon={CalendarDays} />
+              <StepHeader step={3} title={t.dateTime} language={language} icon={CalendarDays} />
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label
                     htmlFor="date"
                     className="mb-2 block text-sm font-medium text-neutral-700"
                   >
-                    Date
+                    {t.date}
                   </label>
                   <input
                     id="date"
@@ -364,7 +422,7 @@ function BookTestDriveContent() {
                     htmlFor="time"
                     className="mb-2 block text-sm font-medium text-neutral-700"
                   >
-                    Time
+                    {t.time}
                   </label>
                   <div className="relative">
                     <Clock
@@ -386,7 +444,7 @@ function BookTestDriveContent() {
 
             {/* Customer details */}
             <section>
-              <StepHeader step={4} title="Your contact details" icon={User} />
+              <StepHeader step={4} title={t.contact} language={language} icon={User} />
               <div className="space-y-4">
                 <div className="relative">
                   <User
@@ -397,8 +455,8 @@ function BookTestDriveContent() {
                     required
                     value={buyerName}
                     onChange={(e) => setBuyerName(e.target.value)}
-                    placeholder="Full name"
-                    aria-label="Full name"
+                    placeholder={t.fullName}
+                    aria-label={t.fullName}
                     className={`${inputClass} pl-11`}
                   />
                 </div>
@@ -413,8 +471,8 @@ function BookTestDriveContent() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Email address"
-                    aria-label="Email address"
+                    placeholder={t.email}
+                    aria-label={t.email}
                     className={`${inputClass} pl-11`}
                   />
                 </div>
@@ -431,8 +489,8 @@ function BookTestDriveContent() {
                     maxLength={10}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="10-digit phone number"
-                    aria-label="10-digit phone number"
+                    placeholder={t.phone}
+                    aria-label={t.phone}
                     className={`${inputClass} pl-11`}
                   />
                 </div>
@@ -449,8 +507,7 @@ function BookTestDriveContent() {
                 className="mt-1 h-4 w-4 shrink-0 accent-orange-500"
               />
               <span>
-                I agree to be contacted by DriveX regarding this test-drive
-                booking and acknowledge the privacy notice.
+                {t.consent}
               </span>
             </label>
 
@@ -461,7 +518,7 @@ function BookTestDriveContent() {
                 disabled={loading || !today}
                 className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-orange-500 px-6 py-4 text-base font-semibold text-neutral-950 shadow-lg shadow-orange-500/30 transition-all hover:-translate-y-0.5 hover:bg-orange-400 disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-neutral-300 disabled:text-neutral-500 disabled:shadow-none"
               >
-                {loading ? "Submitting..." : "Confirm test drive"}
+                {loading ? t.submitting : t.confirm}
                 {!loading && (
                   <ArrowRight
                     size={18}
@@ -492,7 +549,7 @@ function BookTestDriveContent() {
                           href="/buyer/dashboard"
                           className="font-bold underline underline-offset-2"
                         >
-                          View your dashboard
+                          {t.viewDashboard}
                         </Link>
                       </>
                     )}
@@ -506,37 +563,36 @@ function BookTestDriveContent() {
           <aside className="space-y-6 lg:sticky lg:top-8 lg:self-start">
             <div className="rounded-3xl bg-neutral-950 p-7 text-white shadow-xl">
               <p className="text-xs font-bold uppercase tracking-wider text-orange-400">
-                What to expect
+                {t.whatToExpect}
               </p>
               <ul className="mt-5 space-y-4 text-sm text-neutral-300">
                 <li className="flex gap-3">
                   <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-500 text-xs font-bold text-neutral-950">
                     1
                   </span>
-                  Pick a showroom and the car you want to drive.
+                  {t.expect1}
                 </li>
                 <li className="flex gap-3">
                   <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-500 text-xs font-bold text-neutral-950">
                     2
                   </span>
-                  Choose a date and time that works for you.
+                  {t.expect2}
                 </li>
                 <li className="flex gap-3">
                   <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-500 text-xs font-bold text-neutral-950">
                     3
                   </span>
-                  Our team contacts you to confirm the booking.
+                  {t.expect3}
                 </li>
               </ul>
             </div>
 
             <div className="rounded-3xl bg-white p-7 shadow-sm ring-1 ring-neutral-200/70">
               <p className="text-sm font-semibold text-neutral-950">
-                Need help?
+                {t.needHelp}
               </p>
               <p className="mt-2 text-sm leading-6 text-neutral-600">
-                If a showroom or car is missing from the list, it may not be
-                available for test drives right now. Try another option.
+                {t.helpText}
               </p>
             </div>
           </aside>
@@ -552,7 +608,7 @@ export default function BookTestDrivePage() {
     <Suspense
       fallback={
         <main className="flex min-h-screen items-center justify-center bg-neutral-100 text-neutral-600">
-          Loading test drive booking...
+          {copy.en.loading}
         </main>
       }
     >
